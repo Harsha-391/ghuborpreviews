@@ -1,3 +1,5 @@
+"use client";
+
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 
@@ -5,9 +7,10 @@ interface WordsPullUpProps {
   text: string;
   className?: string;
   showAsterisk?: boolean;
+  loading?: boolean;
 }
 
-export default function WordsPullUp({ text, className = "", showAsterisk = false }: WordsPullUpProps) {
+export default function WordsPullUp({ text, className = "", showAsterisk = false, loading = false }: WordsPullUpProps) {
   const containerRef = useRef<HTMLHeadingElement>(null);
   const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
@@ -39,7 +42,7 @@ export default function WordsPullUp({ text, className = "", showAsterisk = false
       ref={containerRef}
       variants={containerVariants}
       initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
+      animate={isInView && !loading ? "visible" : "hidden"}
       className={`inline-flex flex-wrap justify-center select-none ${className}`}
     >
       {words.map((word, idx) => {

@@ -1,8 +1,10 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import WordsPullUp from "./WordsPullUp";
 
-export default function Hero() {
+export default function Hero({ loading = false }: { loading?: boolean }) {
   const ease = [0.16, 1, 0.3, 1] as const;
 
   const handleNavClick = (id: string) => {
@@ -16,12 +18,12 @@ export default function Hero() {
     <section className="h-screen w-full relative p-4 md:p-6 flex flex-col justify-between overflow-hidden select-none">
       {/* Inset Container with Rounded Borders */}
       <div className="relative w-full h-full rounded-2xl md:rounded-[2rem] overflow-hidden flex flex-col justify-between border border-white/5 bg-black">
-        
+
         {/* Background Image with Zoom & Dark Gradients */}
         <div className="absolute inset-0 z-0">
           <motion.div
             initial={{ scale: 1.1, opacity: 0 }}
-            animate={{ scale: 1, opacity: 0.55 }}
+            animate={loading ? {} : { scale: 1, opacity: 0.55 }}
             transition={{ duration: 2.5, ease: ease }}
             className="w-full h-full"
           >
@@ -31,10 +33,10 @@ export default function Hero() {
               className="w-full h-full object-cover object-center filter brightness-90 contrast-110"
             />
           </motion.div>
-          
+
           {/* Noise Overlay */}
           <div className="noise-overlay absolute inset-0 opacity-[0.4] mix-blend-overlay pointer-events-none" />
-          
+
           {/* Red/Oxblood accent glowing spot */}
           <div className="absolute bottom-[20%] left-[20%] w-[300px] h-[300px] bg-red-950/20 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute top-[10%] right-[10%] w-[400px] h-[400px] bg-red-900/10 rounded-full blur-[160px] pointer-events-none" />
@@ -56,7 +58,7 @@ export default function Hero() {
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               />
             </div>
-            
+
             <button
               onClick={() => handleNavClick("struggle")}
               style={{ color: "rgba(225, 224, 204, 0.8)" }}
@@ -98,12 +100,12 @@ export default function Hero() {
         {/* Hero Content (Bottom-aligned) */}
         <div className="w-full absolute bottom-0 left-0 right-0 p-6 md:p-12 z-20 flex flex-col justify-end min-h-[40vh]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-end">
-            
+
             {/* Left 8 columns - Giant Gothic Heading */}
             <div className="lg:col-span-8 flex justify-center lg:justify-start">
               <WordsPullUp
                 text="Ghubor"
-                showAsterisk={true}
+                loading={loading}
                 className="font-blackletter font-medium text-[24vw] sm:text-[22vw] md:text-[20vw] lg:text-[16vw] xl:text-[15vw] 2xl:text-[16vw] leading-[0.8] tracking-normal text-[#E1E0CC] select-none"
               />
             </div>
@@ -112,7 +114,7 @@ export default function Hero() {
             <div className="lg:col-span-4 flex flex-col items-center lg:items-start text-center lg:text-left gap-4 md:gap-6">
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={loading ? {} : { opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.5, ease: ease }}
                 className="text-primary/70 text-xs sm:text-sm md:text-base font-light leading-[1.3] tracking-wide max-w-md"
               >
@@ -122,7 +124,7 @@ export default function Hero() {
               {/* CTA Button */}
               <motion.button
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={loading ? {} : { opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.7, ease: ease }}
                 onClick={() => handleNavClick("about")}
                 className="bg-primary text-black rounded-full py-1.5 pl-5 pr-2 flex items-center justify-between gap-4 font-medium text-xs sm:text-sm group hover:gap-6 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(222,219,200,0.2)] hover:shadow-[0_4px_30px_rgba(222,219,200,0.4)]"
@@ -133,7 +135,7 @@ export default function Hero() {
                 </span>
               </motion.button>
             </div>
-            
+
           </div>
         </div>
 
