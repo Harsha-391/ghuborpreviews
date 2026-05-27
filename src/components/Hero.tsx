@@ -27,6 +27,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
             initial={{ scale: 1.1, opacity: 0 }}
             animate={loading ? {} : { scale: 1, opacity: 0.55 }}
             transition={{ duration: 2.5, ease: ease }}
+            style={{ willChange: "transform, opacity" }}
             className="w-full h-full"
           >
             <img
@@ -80,6 +81,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={loading ? {} : { opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.7, ease: ease }}
+                style={{ willChange: "transform, opacity" }}
               >
                 <Link
                   href="/shop"

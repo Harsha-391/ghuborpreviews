@@ -10,10 +10,18 @@
 
   --animate-marquee: marquee 25s linear infinite;
   @keyframes marquee {
-    from { transform: translateX(0%); }
-    to { transform: translateX(-50%); }
+    from { transform: translate3d(0%, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
   }
 }
+
+.animate-marquee {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
 
 /* Custom Fonts loading */
 @font-face {

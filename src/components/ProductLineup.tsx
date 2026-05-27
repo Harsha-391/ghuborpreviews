@@ -19,10 +19,10 @@ export default function ProductLineup() {
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes productsMarquee {
           0% {
-            transform: translateX(0);
+            transform: translate3d(0, 0, 0);
           }
           100% {
-            transform: translateX(-50%);
+            transform: translate3d(-50%, 0, 0);
           }
         }
         .animate-products-marquee {
@@ -30,6 +30,10 @@ export default function ProductLineup() {
           gap: 2rem;
           width: max-content;
           animation: productsMarquee 35s linear infinite;
+          will-change: transform;
+          transform: translate3d(0, 0, 0);
+          backface-visibility: hidden;
+          perspective: 1000px;
         }
         .animate-products-marquee:hover {
           animation-play-state: paused;
