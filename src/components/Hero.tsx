@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import WordsPullUp from "./WordsPullUp";
+import Navbar from "./Navbar";
 
 export default function Hero({ loading = false }: { loading?: boolean }) {
   const ease = [0.16, 1, 0.3, 1] as const;
@@ -47,55 +49,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
         </div>
 
         {/* Navbar */}
-        <div className="absolute top-0 left-0 right-0 flex justify-center z-50 p-4">
-          <nav className="bg-black/90 backdrop-blur-md rounded-full border border-white/10 px-4 py-2 sm:px-8 sm:py-3 flex items-center gap-4 sm:gap-6 md:gap-12 lg:gap-14 shadow-[0_10px_30px_rgba(0,0,0,0.8)] transition-all duration-300">
-            {/* Logo in Nav */}
-            <div className="h-4 sm:h-5 md:h-6 flex items-center pr-2 border-r border-white/10">
-              <img
-                src="/logo-white.png"
-                alt="Ghubor"
-                className="h-full object-contain cursor-pointer"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              />
-            </div>
-
-            <button
-              onClick={() => handleNavClick("struggle")}
-              style={{ color: "rgba(225, 224, 204, 0.8)" }}
-              className="text-[9px] sm:text-xs md:text-sm font-light tracking-widest uppercase hover:text-[#E1E0CC] transition-colors cursor-pointer"
-            >
-              Struggle
-            </button>
-            <button
-              onClick={() => handleNavClick("faith")}
-              style={{ color: "rgba(225, 224, 204, 0.8)" }}
-              className="text-[9px] sm:text-xs md:text-sm font-light tracking-widest uppercase hover:text-[#E1E0CC] transition-colors cursor-pointer"
-            >
-              Faith
-            </button>
-            <button
-              onClick={() => handleNavClick("transcendence")}
-              style={{ color: "rgba(225, 224, 204, 0.8)" }}
-              className="text-[9px] sm:text-xs md:text-sm font-light tracking-widest uppercase hover:text-[#E1E0CC] transition-colors cursor-pointer"
-            >
-              Transcendence
-            </button>
-            <button
-              onClick={() => handleNavClick("about")}
-              style={{ color: "rgba(225, 224, 204, 0.8)" }}
-              className="text-[9px] sm:text-xs md:text-sm font-light tracking-widest uppercase hover:text-[#E1E0CC] transition-colors cursor-pointer"
-            >
-              Mythos
-            </button>
-            <button
-              onClick={() => handleNavClick("inquiries")}
-              style={{ color: "rgba(225, 224, 204, 0.8)" }}
-              className="text-[9px] sm:text-xs md:text-sm font-light tracking-widest uppercase hover:text-[#E1E0CC] transition-colors cursor-pointer"
-            >
-              Inquiries
-            </button>
-          </nav>
-        </div>
+        <Navbar absolute={true} />
 
         {/* Hero Content (Bottom-aligned) */}
         <div className="w-full absolute bottom-0 left-0 right-0 p-6 md:p-12 z-20 flex flex-col justify-end min-h-[40vh]">
@@ -122,18 +76,21 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
               </motion.p>
 
               {/* CTA Button */}
-              <motion.button
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={loading ? {} : { opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.7, ease: ease }}
-                onClick={() => handleNavClick("about")}
-                className="bg-primary text-black rounded-full py-1.5 pl-5 pr-2 flex items-center justify-between gap-4 font-medium text-xs sm:text-sm group hover:gap-6 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(222,219,200,0.2)] hover:shadow-[0_4px_30px_rgba(222,219,200,0.4)]"
               >
-                <span>ENTER THE SANCTUARY</span>
-                <span className="bg-black rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-white/90" />
-                </span>
-              </motion.button>
+                <Link
+                  href="/shop"
+                  className="bg-primary text-black rounded-full py-1.5 pl-5 pr-2 flex items-center justify-between gap-4 font-medium text-xs sm:text-sm group hover:gap-6 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(222,219,200,0.2)] hover:shadow-[0_4px_30px_rgba(222,219,200,0.4)] inline-flex"
+                >
+                  <span>ENTER THE RITUAL</span>
+                  <span className="bg-black rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-white/90" />
+                  </span>
+                </Link>
+              </motion.div>
             </div>
 
           </div>

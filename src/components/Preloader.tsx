@@ -13,6 +13,41 @@ export default function Preloader({ onComplete }: PreloaderProps) {
   const [wordIndex, setWordIndex] = useState(0);
   const [count, setCount] = useState(0);
   const [isDone, setIsDone] = useState(false);
+  const TARGET_COUNT = 64;
+
+  // Preload home page assets in background
+  useEffect(() => {
+    const imagesToPreload = [
+      "/images/hero.png",
+      "/logo-white.png",
+      "/images/pillars/struggle.png",
+      "/images/pillars/faith.png",
+      "/images/pillars/transcendence.png",
+      "/images/details/glyph.png",
+      "/images/details/tag.png"
+    ];
+
+    imagesToPreload.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+
+    // Preload background video
+    const videoUrl = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4";
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "video";
+    link.href = videoUrl;
+    document.head.appendChild(link);
+
+    return () => {
+      try {
+        document.head.removeChild(link);
+      } catch (e) {
+        // ignore
+      }
+    };
+  }, []);
 
   // Word sequence timer (1.5s per word, total 4.5s)
   useEffect(() => {
@@ -31,15 +66,14 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     return () => clearInterval(wordInterval);
   }, []);
 
-  // Artifact counter timer (ticks up rapidly to 144 over ~4.3s to finish just before fade out)
+  // Artifact counter timer (ticks up rapidly to 64 over ~4.2s to finish just before fade out)
   useEffect(() => {
     const totalDuration = 4200;
-    const target = 144;
-    const intervalTime = totalDuration / target; // ~29ms
+    const intervalTime = totalDuration / TARGET_COUNT; // ~65.6ms
 
     const counterInterval = setInterval(() => {
       setCount((prev) => {
-        if (prev < target) {
+        if (prev < TARGET_COUNT) {
           return prev + 1;
         } else {
           clearInterval(counterInterval);
@@ -53,7 +87,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
 
   // Trigger page reveal after completion
   useEffect(() => {
-    if (isDone && count === 144) {
+    if (isDone && count === TARGET_COUNT) {
       const timeout = setTimeout(() => {
         onComplete();
       }, 300);
@@ -61,7 +95,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     }
   }, [isDone, count, onComplete]);
 
-  // Format count with leading zeros (e.g. 000, 045, 144)
+  // Format count with leading zeros (e.g. 000, 045, 064)
   const formatCount = (num: number) => {
     return String(num).padStart(3, "0");
   };
@@ -98,7 +132,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
         <div className="font-mono text-xs md:text-sm text-primary/80 font-light tracking-wider">
           <span>{formatCount(count)}</span>
           <span className="text-gray-700 mx-1.5">/</span>
-          <span className="text-gray-500">144</span>
+          <span className="text-gray-500">064</span>
         </div>
       </div>
     </div>

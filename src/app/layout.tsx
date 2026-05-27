@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Almarai, Instrument_Serif } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "../components/AuthContext";
 
 const almarai = Almarai({
   subsets: ["arabic", "latin"],
@@ -32,8 +33,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${instrumentSerif.variable}`}>
       <body className={almarai.className}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
 }
+
