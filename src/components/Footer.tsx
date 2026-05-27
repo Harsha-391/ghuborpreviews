@@ -9,9 +9,9 @@ export default function Footer() {
       className="bg-black py-24 px-4 sm:px-6 lg:px-8 border-t border-white/5 relative overflow-hidden select-none"
     >
       <div className="bg-noise absolute inset-0 opacity-[0.05] pointer-events-none" />
-      
+
       <div className="max-w-4xl mx-auto flex flex-col items-center text-center relative z-10">
-        
+
         {/* Signature Glyph in center */}
         <div className="w-16 h-16 sm:w-20 sm:h-20 mb-8 rounded overflow-hidden opacity-60 hover:opacity-100 transition-opacity duration-500 filter invert brightness-125">
           <img
@@ -90,6 +90,19 @@ export default function Footer() {
         <div className="mt-20 pt-8 border-t border-white/5 w-full flex flex-col sm:flex-row justify-between items-center text-[10px] text-gray-600 font-light tracking-widest">
           <p className="uppercase">GHUBOR © 2026. FOR THE MODERN GIBBOR.</p>
           <p className="uppercase mt-2 sm:mt-0">FIGHTING BATTLES NOBODY SEES.</p>
+        </div>
+
+        {/* Sneeze Media watermark */}
+        <div className="mt-8 pt-4 border-t border-white/5 w-full flex justify-center">
+          <a
+            href="https://sneeze.media"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-2 text-[11px] text-gray-500 hover:text-white transition-all duration-500 tracking-[0.2em] uppercase"
+          >
+            <span className="opacity-70 group-hover:opacity-100 transition-opacity duration-500">crafted by</span>
+            <span className="font-semibold text-gray-400 group-hover:text-white transition-all duration-500" style={{ letterSpacing: '0.3em' }}>SNEEZE MEDIA</span>
+          </a>
         </div>
 
       </div>
