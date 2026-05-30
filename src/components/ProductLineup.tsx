@@ -141,6 +141,7 @@ function ProductCard({ product }: { product: any }) {
         <img
           src={product.image}
           alt={product.title}
+          loading="lazy"
           className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-95 group-hover:brightness-100"
         />
 

@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { useScroll } from "framer-motion";
 import WordsPullUpMultiStyle from "./WordsPullUpMultiStyle";
-import AnimatedLetter from "./AnimatedLetter";
+import AnimatedWord from "./AnimatedWord";
 
 export default function About() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,7 +33,7 @@ export default function About() {
   const bodyText =
     "Every piece going forward carries three signatures so a Ghubor is recognizable across a crowded street: gothic blackletter typography, an oxblood or deep crimson palette, dense scripture-like body copy, a signature glyph, and a hand-numbered tag inside. Each piece is an artifact, a testament of struggle, faith, and transcendence. Built for the modern Gibbor. Designed to feel like armor, bound to become skin.";
 
-  const characters = bodyText.split("");
+  const words = bodyText.split(" ");
 
   return (
     <section
@@ -67,15 +67,15 @@ export default function About() {
         {/* Divider */}
         <div className="w-16 h-[1px] bg-primary/20 mx-auto mb-10" />
 
-        {/* Progressive Scroll Character Reveal */}
+        {/* Progressive Scroll Word Reveal */}
         <div className="max-w-3xl mx-auto text-center leading-relaxed">
           <p className="text-[#DEDBC8]/90 text-xs sm:text-sm md:text-base lg:text-lg font-light tracking-wide inline">
-            {characters.map((char, index) => (
-              <AnimatedLetter
+            {words.map((word, index) => (
+              <AnimatedWord
                 key={index}
-                char={char}
+                word={word}
                 index={index}
-                totalChars={characters.length}
+                totalWords={words.length}
                 progress={scrollYProgress}
               />
             ))}

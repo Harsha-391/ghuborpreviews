@@ -64,7 +64,7 @@ export default function AboutPage() {
         >
           {/* Subtle logo backing */}
           <div className="absolute right-0 bottom-0 opacity-[0.03] translate-x-12 translate-y-12">
-            <img src="/logo-white.png" alt="" className="w-96" />
+            <img src="/logo-white.svg" alt="" className="w-96" />
           </div>
 
           <h2 className="font-serif italic text-2xl sm:text-3xl text-primary font-light mb-6">

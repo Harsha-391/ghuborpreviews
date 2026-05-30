@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import WordsPullUp from "./WordsPullUp";
 import Navbar from "./Navbar";
 
 export default function Hero({ loading = false }: { loading?: boolean }) {
@@ -22,7 +21,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
       <div className="relative w-full h-full rounded-2xl md:rounded-[2rem] overflow-hidden flex flex-col justify-between border border-white/5 bg-black">
 
         {/* Background Image with Zoom & Dark Gradients */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 pointer-events-none">
           <motion.div
             initial={{ scale: 1.1, opacity: 0 }}
             animate={loading ? {} : { scale: 1, opacity: 0.55 }}
@@ -52,50 +51,64 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
         {/* Navbar */}
         <Navbar absolute={true} />
 
-        {/* Hero Content (Bottom-aligned) */}
-        <div className="w-full absolute bottom-0 left-0 right-0 p-6 md:p-12 z-20 flex flex-col justify-end min-h-[40vh]">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-end">
+        {/* Spacer for Navbar overlay */}
+        <div className="w-full h-16 sm:h-20 md:h-24 pointer-events-none" />
 
-            {/* Left 8 columns - Giant Gothic Heading */}
-            <div className="lg:col-span-8 flex justify-center lg:justify-start">
-              <WordsPullUp
-                text="Ghubor"
-                loading={loading}
-                className="font-blackletter font-medium text-[24vw] sm:text-[22vw] md:text-[20vw] lg:text-[16vw] xl:text-[15vw] 2xl:text-[16vw] leading-[0.8] tracking-normal text-[#E1E0CC] select-none"
-              />
-            </div>
+        {/* Hero Content (Centered, Elevated above the fold) */}
+        <div className="w-full z-20 flex flex-col items-center justify-center px-6 py-6 flex-grow max-w-4xl mx-auto text-center gap-6 md:gap-8">
 
-            {/* Right 4 columns - Description & CTA */}
-            <div className="lg:col-span-4 flex flex-col items-center lg:items-start text-center lg:text-left gap-4 md:gap-6">
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={loading ? {} : { opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.5, ease: ease }}
-                className="text-primary/70 text-xs sm:text-sm md:text-base font-light leading-[1.3] tracking-wide max-w-md"
-              >
-                Armor for the modern Gibbor. Wearable scripture. Fighting battles nobody sees. Forged in the dark, speaking in fragments, bound to become skin.
-              </motion.p>
+          {/* Brand Glyph Signature */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={loading ? {} : { opacity: 0.65, scale: 1 }}
+            transition={{ duration: 1.5, delay: 0.2, ease }}
+            className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 filter invert brightness-125 hover:opacity-100 transition-opacity duration-300 cursor-pointer pointer-events-auto"
+            onClick={() => handleNavClick("about")}
+            title="Descend to foundations"
+          >
 
-              {/* CTA Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={loading ? {} : { opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.7, ease: ease }}
-                style={{ willChange: "transform, opacity" }}
-              >
-                <Link
-                  href="/shop"
-                  className="bg-primary text-black rounded-full py-1.5 pl-5 pr-2 flex items-center justify-between gap-4 font-medium text-xs sm:text-sm group hover:gap-6 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(222,219,200,0.2)] hover:shadow-[0_4px_30px_rgba(222,219,200,0.4)] inline-flex"
-                >
-                  <span>ENTER THE RITUAL</span>
-                  <span className="bg-black rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
-                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-white/90" />
-                  </span>
-                </Link>
-              </motion.div>
-            </div>
+          </motion.div>
 
-          </div>
+          {/* Elevated Large Description */}
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            animate={loading ? {} : { opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 0.4, ease }}
+            className="font-serif italic text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-[#E1E0CC] font-light leading-[1.3] sm:leading-[1.25] tracking-wide max-w-3xl text-center"
+          >
+            Armor for the modern Gibbor. Wearable scripture.
+          </motion.p>
+
+          {/* Elevated CTA Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={loading ? {} : { opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 0.6, ease }}
+            style={{ willChange: "transform, opacity" }}
+          >
+            <Link
+              href="/shop"
+              className="bg-primary text-black rounded-full py-2.5 pl-6 pr-2.5 flex items-center justify-between gap-6 font-medium text-xs sm:text-sm group hover:gap-8 transition-all duration-300 cursor-pointer shadow-[0_4px_25px_rgba(222,219,200,0.25)] hover:shadow-[0_4px_35px_rgba(222,219,200,0.5)] inline-flex"
+            >
+              <span>ENTER THE RITUAL</span>
+              <span className="bg-black rounded-full w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                <ArrowRight className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white/90" />
+              </span>
+            </Link>
+          </motion.div>
+
+        </div>
+
+        {/* Bottom Details Bar */}
+        <div className="w-full z-20 px-6 pb-6 md:px-12 md:pb-10 flex justify-between items-center text-[9px] sm:text-[10px] text-gray-500 font-mono tracking-[0.2em] uppercase select-none">
+          <span>COVENANT DROP II</span>
+          <button
+            onClick={() => handleNavClick("about")}
+            className="animate-bounce hover:text-primary transition-colors cursor-pointer"
+          >
+            SCROLL TO DESCEND ↓
+          </button>
+          <span>N° 01-098 / 064</span>
         </div>
 
       </div>
