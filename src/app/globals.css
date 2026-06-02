@@ -1,8 +1,44 @@
 @import "tailwindcss";
 
+:root {
+  --bg-page: #000000;
+  --bg-card: #101010;
+  --bg-card-alt: #120b0b;
+  --bg-nav: #070202;
+  --text-page: #E1E0CC;
+  --text-muted: #9CA3AF;
+  --text-dim: #6B7280;
+  --color-primary: #DEDBC8;
+  --color-accent: #5C0606;
+  --border-color: rgba(255, 255, 255, 0.05);
+}
+
+html.light {
+  --bg-page: #F9F8F3;
+  --bg-card: #FFFFFF;
+  --bg-card-alt: #F2F1EA;
+  --bg-nav: #EAE8DF;
+  --text-page: #070202;
+  --text-muted: #4B5563;
+  --text-dim: #6B7280;
+  --color-primary: #5C0606; /* Premium oxblood primary for light theme */
+  --color-accent: #DEDBC8;
+  --border-color: rgba(0, 0, 0, 0.08);
+}
+
 /* Custom Theme Variables for Tailwind CSS v4 */
 @theme {
-  --color-primary: #DEDBC8;
+  --color-primary: var(--color-primary);
+  --color-accent: var(--color-accent);
+  --color-bg-page: var(--bg-page);
+  --color-bg-card: var(--bg-card);
+  --color-bg-card-alt: var(--bg-card-alt);
+  --color-bg-nav: var(--bg-nav);
+  --color-text-page: var(--text-page);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --color-border-theme: var(--border-color);
+
   --font-serif: var(--font-instrument-serif), serif;
   --font-blackletter: "EnglishTowne", serif;
   --font-gothic-italic: "ITGravenorth-Italic", serif;
@@ -15,13 +51,17 @@
   }
 }
 
+/* Global transitions for buttery theme switches */
+body, div, section, header, footer, nav, a, button, p, span, h1, h2, h3, h4, h5, h6, input, select, textarea, table, tr, td, th {
+  transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, text-shadow 0.4s ease, box-shadow 0.4s ease;
+}
+
 .animate-marquee {
   will-change: transform;
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   perspective: 1000px;
 }
-
 
 /* Custom Fonts loading */
 @font-face {
@@ -62,15 +102,15 @@
 /* Smooth Scrolling & Hide scrollbar default styles for cinematic view */
 html {
   scroll-behavior: smooth;
-  background-color: #000000;
+  background-color: var(--bg-page);
 }
 
 body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  background-color: #000000;
-  color: #E1E0CC;
+  background-color: var(--bg-page);
+  color: var(--text-page);
 }
 
 /* Custom Webkit scrollbar for premium theme */
@@ -78,12 +118,12 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: var(--bg-page);
 }
 ::-webkit-scrollbar-thumb {
-  background: #212121;
+  background: var(--bg-card-alt);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #5C0606; /* Dark Oxblood color on scrollbar hover */
+  background: var(--color-primary);
 }

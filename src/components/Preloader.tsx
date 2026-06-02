@@ -69,15 +69,24 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     return () => clearInterval(counterInterval);
   }, []);
 
-  // Trigger page reveal after completion
+  // Trigger page reveal after completion — use isDone as the single reliable signal
+  // with a hard fallback timeout so the page never gets stuck
   useEffect(() => {
-    if (isDone && count === TARGET_COUNT) {
+    if (isDone) {
       const timeout = setTimeout(() => {
         onComplete();
-      }, 300);
+      }, 350);
       return () => clearTimeout(timeout);
     }
-  }, [isDone, count, onComplete]);
+  }, [isDone, onComplete]);
+
+  // Absolute safety net: never show preloader for more than 4 seconds
+  useEffect(() => {
+    const safety = setTimeout(() => {
+      onComplete();
+    }, 4000);
+    return () => clearTimeout(safety);
+  }, [onComplete]);
 
   // Format count with leading zeros (e.g. 000, 045, 064)
   const formatCount = (num: number) => {

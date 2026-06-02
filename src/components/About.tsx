@@ -17,7 +17,7 @@ export default function About() {
   const headingSegments = [
     {
       text: "Derived from the Hebrew Gibbor, ",
-      className: "text-[#E1E0CC] font-light",
+      className: "text-text-page font-light",
     },
     {
       text: "a mighty warrior, hero, ",
@@ -25,7 +25,7 @@ export default function About() {
     },
     {
       text: "Ghubor makes wearable scripture for people fighting battles nobody sees.",
-      className: "text-[#E1E0CC] font-light",
+      className: "text-text-page font-light",
     },
   ];
 
@@ -38,12 +38,12 @@ export default function About() {
   return (
     <section
       id="about"
-      className="bg-black py-20 px-4 sm:px-6 lg:px-8 select-none"
+      className="bg-bg-page py-20 px-4 sm:px-6 lg:px-8 select-none"
     >
       {/* Inner Card */}
       <div
         ref={containerRef}
-        className="bg-[#101010] rounded-3xl p-8 sm:p-12 md:p-16 max-w-6xl mx-auto border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden"
+        className="bg-bg-card rounded-3xl p-8 sm:p-12 md:p-16 max-w-6xl mx-auto border border-border-theme shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden"
       >
         {/* Subtle Decorative Glows */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-red-950/10 rounded-full blur-[80px]" />
@@ -69,7 +69,7 @@ export default function About() {
 
         {/* Progressive Scroll Word Reveal */}
         <div className="max-w-3xl mx-auto text-center leading-relaxed">
-          <p className="text-[#DEDBC8]/90 text-xs sm:text-sm md:text-base lg:text-lg font-light tracking-wide inline">
+          <p className="text-text-page/90 text-xs sm:text-sm md:text-base lg:text-lg font-light tracking-wide inline">
             {words.map((word, index) => (
               <AnimatedWord
                 key={index}
@@ -83,18 +83,18 @@ export default function About() {
         </div>
 
         {/* Brand Foundation Emotional Pillars Summary Icons (Visual layout touch) */}
-        <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mt-16 text-center border-t border-white/5 pt-8">
+        <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mt-16 text-center border-t border-border-theme pt-8">
           <div>
             <h4 className="text-[10px] sm:text-xs font-semibold text-primary/70 tracking-widest uppercase">Struggle</h4>
-            <p className="text-[8px] sm:text-[10px] text-gray-500 font-light mt-1 uppercase tracking-wider">The weight of human</p>
+            <p className="text-[8px] sm:text-[10px] text-text-dim font-light mt-1 uppercase tracking-wider">The weight of human</p>
           </div>
           <div>
             <h4 className="text-[10px] sm:text-xs font-semibold text-primary/70 tracking-widest uppercase">Faith</h4>
-            <p className="text-[8px] sm:text-[10px] text-gray-500 font-light mt-1 uppercase tracking-wider">Belief without proof</p>
+            <p className="text-[8px] sm:text-[10px] text-text-dim font-light mt-1 uppercase tracking-wider">Belief without proof</p>
           </div>
           <div>
             <h4 className="text-[10px] sm:text-xs font-semibold text-primary/70 tracking-widest uppercase">Transcendence</h4>
-            <p className="text-[8px] sm:text-[10px] text-gray-500 font-light mt-1 uppercase tracking-wider">Armor becomes skin</p>
+            <p className="text-[8px] sm:text-[10px] text-text-dim font-light mt-1 uppercase tracking-wider">Armor becomes skin</p>
           </div>
         </div>
 

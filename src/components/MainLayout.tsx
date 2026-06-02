@@ -31,7 +31,7 @@ export default function MainLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-[#E1E0CC] selection:bg-red-950 selection:text-primary relative">
+    <div className="min-h-screen bg-bg-page text-text-page selection:bg-accent selection:text-primary relative">
       
       {/* Preloader */}
       <AnimatePresence>

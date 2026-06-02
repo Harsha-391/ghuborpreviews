@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Heart } from "lucide-react";
 import { products } from "../data/products";
 import { toggleWishlist, isInWishlist } from "../utils/store";
+import { useImageConfig } from "./ImageConfigContext";
 
 export default function ProductLineup() {
   const ease = [0.16, 1, 0.3, 1] as const;
@@ -13,7 +14,7 @@ export default function ProductLineup() {
   return (
     <section
       id="lineup"
-      className="bg-black py-24 border-t border-white/5 relative overflow-hidden select-none"
+      className="bg-bg-page py-24 border-t border-border-theme relative overflow-hidden select-none"
     >
       {/* Dynamic Keyframes injected locally */}
       <style dangerouslySetInnerHTML={{ __html: `
@@ -55,7 +56,7 @@ export default function ProductLineup() {
           <span className="text-primary text-[10px] sm:text-xs font-light tracking-[0.3em] uppercase block mb-3">
             THE CURRENT DROP
           </span>
-          <h2 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-[#E1E0CC] font-light tracking-wide leading-none">
+          <h2 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-text-page font-light tracking-wide leading-none">
             Drop 02: Wearable Scripture
           </h2>
           <div className="w-12 h-[1px] bg-primary/20 mx-auto mt-6" />
@@ -95,6 +96,7 @@ export default function ProductLineup() {
 // Sub-component for individual product card inside marquee
 function ProductCard({ product }: { product: any }) {
   const [wishlisted, setWishlisted] = useState(false);
+  const { getImageUrl } = useImageConfig();
 
   useEffect(() => {
     setWishlisted(isInWishlist(product.id));
@@ -116,17 +118,17 @@ function ProductCard({ product }: { product: any }) {
   };
 
   return (
-    <div className="w-[280px] sm:w-[320px] shrink-0 flex flex-col h-[480px] bg-[#0a0a0a] border border-white/5 rounded-2xl overflow-hidden transition-all duration-500 hover:border-primary/20 hover:bg-[#120808]/85 hover:shadow-[0_15px_40px_rgba(92,6,6,0.06)] whitespace-normal group relative">
+    <div className="w-[280px] sm:w-[320px] shrink-0 flex flex-col h-[480px] bg-bg-card border border-border-theme rounded-2xl overflow-hidden transition-all duration-500 hover:border-primary/20 hover:bg-bg-card-alt hover:shadow-[0_15px_40px_rgba(92,6,6,0.06)] whitespace-normal group relative">
       {/* Product Image Frame */}
-      <Link href={`/shop/${product.id}`} className="relative block aspect-[4/5] w-full overflow-hidden bg-black/40">
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-full px-3 py-1">
+      <Link href={`/shop/${product.id}`} className="relative block aspect-[4/5] w-full overflow-hidden bg-bg-page/40">
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-bg-page/70 backdrop-blur-md border border-border-theme rounded-full px-3 py-1">
           <span className="w-1.5 h-1.5 rounded-full bg-[#5C0606] animate-pulse" />
           <span className="text-[9px] font-mono text-primary/80 uppercase tracking-widest">{product.drop}</span>
         </div>
 
         {/* Limited tag moved to left to avoid overlapping the heart button */}
-        <div className="absolute top-4 right-14 z-20 bg-black/40 backdrop-blur-sm border border-white/5 rounded px-2 py-0.5">
-          <span className="text-[8px] font-mono text-gray-500 tracking-wider">LIMITED / 64</span>
+        <div className="absolute top-4 right-14 z-20 bg-bg-page/40 backdrop-blur-sm border border-border-theme rounded px-2 py-0.5">
+          <span className="text-[8px] font-mono text-text-muted tracking-wider">LIMITED / 64</span>
         </div>
 
         {/* Floating Heart Button */}
@@ -139,16 +141,16 @@ function ProductCard({ product }: { product: any }) {
         </button>
 
         <img
-          src={product.image}
+          src={getImageUrl("product-" + product.id, product.image)}
           alt={product.title}
           loading="lazy"
           className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-95 group-hover:brightness-100"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+        <div className="absolute inset-0 bg-gradient-to-t from-bg-page via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
         
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <span className="bg-primary text-black font-mono text-xs px-5 py-2.5 rounded-full font-medium tracking-widest shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+          <span className="bg-primary text-bg-page font-mono text-xs px-5 py-2.5 rounded-full font-medium tracking-widest shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
             EXAMINE ARTIFACT
           </span>
         </div>
@@ -158,7 +160,7 @@ function ProductCard({ product }: { product: any }) {
       <div className="p-5 flex flex-col justify-between flex-grow">
         <div>
           <div className="flex justify-between items-baseline mb-2">
-            <h3 className="text-xs sm:text-sm font-semibold tracking-widest text-[#E1E0CC] group-hover:text-primary transition-colors uppercase truncate max-w-[170px] sm:max-w-[200px]">
+            <h3 className="text-xs sm:text-sm font-semibold tracking-widest text-text-page group-hover:text-primary transition-colors uppercase truncate max-w-[170px] sm:max-w-[200px]">
               <Link href={`/shop/${product.id}`}>{product.title}</Link>
             </h3>
             <span className="text-xs sm:text-sm font-mono font-medium text-primary/80 ml-2">
@@ -166,13 +168,13 @@ function ProductCard({ product }: { product: any }) {
             </span>
           </div>
           
-          <p className="text-[11px] text-gray-500 font-light leading-relaxed mb-4 line-clamp-2 group-hover:text-gray-400 transition-colors">
+          <p className="text-[11px] text-text-muted font-light leading-relaxed mb-4 line-clamp-2 group-hover:text-gray-400 transition-colors">
             {product.description}
           </p>
         </div>
 
-        <div className="pt-3 border-t border-white/5 flex justify-between items-center mt-auto">
-          <span className="text-[9px] text-gray-600 uppercase font-mono tracking-wider">
+        <div className="pt-3 border-t border-border-theme flex justify-between items-center mt-auto">
+          <span className="text-[9px] text-text-dim uppercase font-mono tracking-wider">
             {product.weight}
           </span>
           

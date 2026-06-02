@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
+import { useImageConfig } from "./ImageConfigContext";
 
 interface Review {
   quote: string;
@@ -13,6 +14,7 @@ interface Review {
 export default function Reviews() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleCards, setVisibleCards] = useState(3);
+  const { getImageUrl } = useImageConfig();
 
   const reviews: Review[] = [
     {
@@ -80,7 +82,7 @@ export default function Reviews() {
   };
 
   return (
-    <section id="reviews" className="bg-black py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden select-none border-t border-white/5">
+    <section id="reviews" className="bg-bg-page py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden select-none border-t border-border-theme">
       {/* Background Noise and Subtle Red Glow */}
       <div className="bg-noise absolute inset-0 opacity-[0.08] pointer-events-none z-0" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-red-950/10 rounded-full blur-[140px] pointer-events-none z-0" />
@@ -93,7 +95,7 @@ export default function Reviews() {
             <span className="text-primary text-[10px] sm:text-xs font-light tracking-[0.3em] uppercase block mb-3">
               TESTAMENTS
             </span>
-            <h2 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-[#E1E0CC] font-light tracking-wide leading-none">
+            <h2 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-text-page font-light tracking-wide leading-none">
               Witnessed in struggle.
             </h2>
           </div>
@@ -134,37 +136,37 @@ export default function Reviews() {
                   key={index}
                   className={`${cardWidth} shrink-0 px-3`}
                 >
-                  <div className="bg-[#0c0c0c] border border-white/5 rounded-2xl p-6 sm:p-8 flex flex-col justify-between min-h-[280px] group transition-all duration-500 hover:border-primary/20 hover:bg-[#120808] hover:shadow-[0_10px_30px_rgba(92,6,6,0.05)] relative overflow-hidden h-full">
+                  <div className="bg-bg-card border border-border-theme rounded-2xl p-6 sm:p-8 flex flex-col justify-between min-h-[280px] group transition-all duration-500 hover:border-primary/20 hover:bg-bg-card-alt hover:shadow-[0_10px_30px_rgba(92,6,6,0.05)] relative overflow-hidden h-full">
                     {/* Oxblood accent spot on hover */}
                     <div className="absolute top-0 right-0 w-24 h-24 bg-red-950/0 group-hover:bg-red-950/5 rounded-full blur-2xl transition-all duration-500 pointer-events-none" />
                     
                     {/* Quote Icon */}
                     <div className="mb-6 flex justify-between items-start">
                       <Quote className="w-8 h-8 text-[#5C0606] opacity-40 group-hover:opacity-85 transition-opacity duration-500" />
-                      <span className="text-[8px] font-mono text-gray-500 uppercase tracking-widest bg-black/50 px-2 py-0.5 rounded border border-white/5">
+                      <span className="text-[8px] font-mono text-text-muted uppercase tracking-widest bg-bg-page/50 px-2 py-0.5 rounded border border-border-theme">
                         {review.tag}
                       </span>
                     </div>
 
                     {/* Quote Text */}
-                    <p className="text-gray-400 group-hover:text-[#E1E0CC] text-xs sm:text-sm font-light leading-relaxed mb-8 transition-colors duration-500 flex-grow">
+                    <p className="text-text-muted group-hover:text-text-page text-xs sm:text-sm font-light leading-relaxed mb-8 transition-colors duration-500 flex-grow">
                       &ldquo;{review.quote}&rdquo;
                     </p>
 
                     {/* User Profile */}
-                    <div className="border-t border-white/5 pt-4 flex justify-between items-end mt-auto">
+                    <div className="border-t border-border-theme pt-4 flex justify-between items-end mt-auto">
                       <div>
                         <h4 className="text-xs sm:text-sm font-medium text-primary tracking-wide">
                           {review.author}
                         </h4>
-                        <p className="text-[10px] text-gray-500 uppercase font-light tracking-widest mt-0.5">
+                        <p className="text-[10px] text-text-dim uppercase font-light tracking-widest mt-0.5">
                           {review.location}
                         </p>
                       </div>
                       
                       {/* Active glyph */}
                       <div className="w-6 h-6 opacity-20 group-hover:opacity-75 transition-opacity duration-500 filter invert brightness-125">
-                        <img src="/images/details/glyph.png" alt="" className="w-full h-full object-contain" />
+                        <img src={getImageUrl("glyph")} alt="" className="w-full h-full object-contain" />
                       </div>
                     </div>
                   </div>

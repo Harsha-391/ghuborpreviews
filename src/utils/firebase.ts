@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 // Firebase web API keys always start with "AIzaSy"
@@ -9,6 +10,7 @@ const isConfigValid = typeof apiKey === "string" && apiKey.trim().startsWith("AI
 let app: any = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
 
 if (isConfigValid) {
   const firebaseConfig = {
@@ -23,8 +25,9 @@ if (isConfigValid) {
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
+  storage = getStorage(app);
 } else {
   console.warn("Ghubor: Firebase environment config is missing or invalid. Auth and database features are deactivated.");
 }
 
-export { app, auth, db };
+export { app, auth, db, storage };

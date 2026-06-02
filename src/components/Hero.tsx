@@ -4,8 +4,10 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Navbar from "./Navbar";
+import { useImageConfig } from "./ImageConfigContext";
 
 export default function Hero({ loading = false }: { loading?: boolean }) {
+  const { getImageUrl } = useImageConfig();
   const ease = [0.16, 1, 0.3, 1] as const;
 
   const handleNavClick = (id: string) => {
@@ -18,7 +20,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
   return (
     <section className="h-screen w-full relative p-4 md:p-6 flex flex-col justify-between overflow-hidden select-none">
       {/* Inset Container with Rounded Borders */}
-      <div className="relative w-full h-full rounded-2xl md:rounded-[2rem] overflow-hidden flex flex-col justify-between border border-white/5 bg-black">
+      <div className="relative w-full h-full rounded-2xl md:rounded-[2rem] overflow-hidden flex flex-col justify-between border border-border-theme bg-bg-page">
 
         {/* Background Image with Zoom & Dark Gradients */}
         <div className="absolute inset-0 z-0 pointer-events-none">
@@ -30,7 +32,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
             className="w-full h-full"
           >
             <img
-              src="/images/hero.png"
+              src={getImageUrl("hero")}
               alt="Ghubor Hero Cinematic"
               className="w-full h-full object-cover object-center filter brightness-90 contrast-110"
             />
@@ -74,7 +76,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
             initial={{ opacity: 0, y: 15 }}
             animate={loading ? {} : { opacity: 1, y: 0 }}
             transition={{ duration: 1.2, delay: 0.4, ease }}
-            className="font-serif italic text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-[#E1E0CC] font-light leading-[1.3] sm:leading-[1.25] tracking-wide max-w-3xl text-center"
+            className="font-serif italic text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-text-page font-light leading-[1.3] sm:leading-[1.25] tracking-wide max-w-3xl text-center"
           >
             Armor for the modern Gibbor. Wearable scripture.
           </motion.p>
@@ -88,11 +90,11 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
           >
             <Link
               href="/shop"
-              className="bg-primary text-black rounded-full py-2.5 pl-6 pr-2.5 flex items-center justify-between gap-6 font-medium text-xs sm:text-sm group hover:gap-8 transition-all duration-300 cursor-pointer shadow-[0_4px_25px_rgba(222,219,200,0.25)] hover:shadow-[0_4px_35px_rgba(222,219,200,0.5)] inline-flex"
+              className="bg-primary text-bg-page rounded-full py-2.5 pl-6 pr-2.5 flex items-center justify-between gap-6 font-medium text-xs sm:text-sm group hover:gap-8 transition-all duration-300 cursor-pointer shadow-[0_4px_25px_rgba(222,219,200,0.25)] hover:shadow-[0_4px_35px_rgba(222,219,200,0.5)] inline-flex"
             >
               <span>ENTER THE RITUAL</span>
-              <span className="bg-black rounded-full w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
-                <ArrowRight className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white/90" />
+              <span className="bg-text-page rounded-full w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                <ArrowRight className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-bg-page" />
               </span>
             </Link>
           </motion.div>
@@ -100,7 +102,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
         </div>
 
         {/* Bottom Details Bar */}
-        <div className="w-full z-20 px-6 pb-6 md:px-12 md:pb-10 flex justify-between items-center text-[9px] sm:text-[10px] text-gray-500 font-mono tracking-[0.2em] uppercase select-none">
+        <div className="w-full z-20 px-6 pb-6 md:px-12 md:pb-10 flex justify-between items-center text-[9px] sm:text-[10px] text-text-muted font-mono tracking-[0.2em] uppercase select-none">
           <span>COVENANT DROP II</span>
           <button
             onClick={() => handleNavClick("about")}

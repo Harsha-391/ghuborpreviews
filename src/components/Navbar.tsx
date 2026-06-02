@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ShoppingBag, Heart, Info, Store, User } from "lucide-react";
+import { Menu, X, ShoppingBag, Heart, Info, Store, User, Sun, Moon } from "lucide-react";
 import { useAuth } from "./AuthContext";
+import { useTheme } from "./ThemeContext";
 
 interface NavbarProps {
   absolute?: boolean;
@@ -17,6 +18,7 @@ export default function Navbar({ absolute = false }: NavbarProps) {
   const [wishlistCount, setWishlistCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const updateCounts = () => {
@@ -57,14 +59,14 @@ export default function Navbar({ absolute = false }: NavbarProps) {
   return (
     <nav
       className={`${absolute
-          ? "absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent border-b border-white/5"
-          : "relative bg-[#070202] border-b border-white/5"
-        } z-[999] w-full bg-black/90 backdrop-blur-md px-6 py-4 md:px-12 flex items-center justify-between transition-all duration-300 select-none`}
+          ? "absolute top-0 left-0 right-0 bg-gradient-to-b from-bg-page/80 via-bg-page/40 to-transparent border-b border-border-theme"
+          : "relative bg-bg-nav border-b border-border-theme"
+        } z-[999] w-full bg-bg-nav/90 backdrop-blur-md px-6 py-4 md:px-12 flex items-center justify-between transition-all duration-300 select-none`}
     >
       {/* LOGO */}
       <Link href="/" className="flex items-center gap-3">
         <img
-          src="/logo-white.png"
+          src={theme === "light" ? "/logo-black.png" : "/logo-white.png"}
           alt="Ghubor Logo"
           className="h-10 sm:h-12 md:h-15 object-contain transition-all duration-300 hover:scale-105"
         />
@@ -78,7 +80,7 @@ export default function Navbar({ absolute = false }: NavbarProps) {
             <Link
               key={link.id}
               href={link.href}
-              className={`font-mono text-[10px] lg:text-xs tracking-[0.25em] uppercase transition-all duration-300 relative py-1.5 flex items-center gap-2 ${isActive ? "text-primary font-medium" : "text-[#DEDBC8]/50 hover:text-primary"
+              className={`font-mono text-[10px] lg:text-xs tracking-[0.25em] uppercase transition-all duration-300 relative py-1.5 flex items-center gap-2 ${isActive ? "text-primary font-medium" : "text-text-muted hover:text-primary"
                 }`}
             >
               <span>{link.name}</span>
@@ -100,10 +102,26 @@ export default function Navbar({ absolute = false }: NavbarProps) {
             </Link>
           );
         })}
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-full hover:bg-bg-card-alt text-text-muted hover:text-primary transition-all duration-300 cursor-pointer"
+          aria-label="Toggle Theme"
+        >
+          {theme === "dark" ? <Sun className="w-4.5 h-4.5 text-primary" /> : <Moon className="w-4.5 h-4.5 text-primary" />}
+        </button>
       </div>
 
-      {/* MOBILE HAMBURGER BUTTON */}
-      <div className="md:hidden flex items-center">
+      {/* MOBILE HAMBURGER BUTTON & THEME TOGGLE */}
+      <div className="md:hidden flex items-center gap-4">
+        <button
+          onClick={toggleTheme}
+          className="text-primary hover:text-white p-1.5 cursor-pointer transition-colors"
+          aria-label="Toggle Theme"
+        >
+          {theme === "dark" ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+        </button>
         <button
           onClick={toggleMenu}
           aria-label="Toggle Menu"
@@ -121,11 +139,11 @@ export default function Navbar({ absolute = false }: NavbarProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-full left-0 right-0 w-full bg-black/98 backdrop-blur-xl border-t border-b border-white/5 p-6 shadow-2xl md:hidden z-[1000] flex flex-col gap-6"
+            className="absolute top-full left-0 right-0 w-full bg-bg-nav/98 backdrop-blur-xl border-t border-b border-border-theme p-6 shadow-2xl md:hidden z-[1000] flex flex-col gap-6"
           >
             {/* Header / Brand label inside mobile menu */}
-            <div className="flex justify-between items-center border-b border-white/5 pb-3">
-              <span className="text-[9px] font-mono text-gray-500 tracking-[0.25em] uppercase">
+            <div className="flex justify-between items-center border-b border-border-theme pb-3">
+              <span className="text-[9px] font-mono text-text-muted tracking-[0.25em] uppercase">
                 SANCTUARY MENU
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-[#5C0606] animate-pulse" />
@@ -147,8 +165,8 @@ export default function Navbar({ absolute = false }: NavbarProps) {
                       href={link.href}
                       onClick={() => setIsOpen(false)}
                       className={`flex items-center justify-between py-3 px-4 rounded-xl border transition-all ${isActive
-                          ? "bg-[#5C0606]/10 border-primary/20 text-primary font-semibold"
-                          : "bg-transparent border-transparent text-primary/80 hover:text-white hover:bg-white/5"
+                          ? "bg-accent/10 border-primary/20 text-primary font-semibold"
+                          : "bg-transparent border-transparent text-text-page/80 hover:text-primary hover:bg-bg-card-alt"
                         }`}
                     >
                       <div className="flex items-center gap-4">
@@ -170,8 +188,8 @@ export default function Navbar({ absolute = false }: NavbarProps) {
             </div>
 
             {/* Bottom brand footer inside mobile menu */}
-            <div className="border-t border-white/5 pt-4 text-center">
-              <p className="text-[8px] text-gray-600 font-mono tracking-widest uppercase">
+            <div className="border-t border-border-theme pt-4 text-center">
+              <p className="text-[8px] text-text-dim font-mono tracking-widest uppercase">
                 GHUBOR © 2026. FOR THE MODERN GIBBOR.
               </p>
             </div>
@@ -181,3 +199,4 @@ export default function Navbar({ absolute = false }: NavbarProps) {
     </nav>
   );
 }
+

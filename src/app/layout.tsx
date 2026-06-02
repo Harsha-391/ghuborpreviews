@@ -3,6 +3,9 @@ import { Almarai, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../components/AuthContext";
 
+import { ThemeProvider } from "../components/ThemeContext";
+import { ImageConfigProvider } from "../components/ImageConfigContext";
+
 const almarai = Almarai({
   subsets: ["arabic", "latin"],
   weight: ["300", "400", "700", "800"],
@@ -33,9 +36,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${instrumentSerif.variable}`}>
       <body className={almarai.className}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <ThemeProvider>
+          <ImageConfigProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </ImageConfigProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
