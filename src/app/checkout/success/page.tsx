@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 
 export default function CheckoutSuccessPage() {
   const ease = [0.16, 1, 0.3, 1] as const;
-  const [orderNo, setOrderNo] = useState("GH-02-PENDING");
+  const [orderNo, setOrderNo] = useState("GH-01-PENDING");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -18,7 +18,7 @@ export default function CheckoutSuccessPage() {
       if (cached) {
         setOrderNo(cached);
       } else {
-        const fallback = `GH-02-${Math.floor(1000 + Math.random() * 9000)}`;
+        const fallback = `GH-01-${Math.floor(1000 + Math.random() * 9000)}`;
         setOrderNo(fallback);
       }
     }
@@ -67,7 +67,7 @@ export default function CheckoutSuccessPage() {
           </div>
 
           <p className="text-xs sm:text-sm text-gray-400 font-light leading-relaxed mb-8 max-w-md mx-auto">
-            Your garment selection has been recorded within the archives of **Drop 02** and is being prepared in the dark. An email notification ritual containing sizing specifications and transaction details has been sent to your address.
+            Your garment selection has been recorded within the archives of **Drop 01** and is being prepared in the dark. An email notification ritual containing sizing specifications and transaction details has been sent to your address.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

@@ -50,7 +50,7 @@ export const products: Product[] = [
     ],
     fabric: "100% Organic Cotton French Terry",
     weight: "480 GSM",
-    drop: "DROP 02"
+    drop: "DROP 01"
   },
   {
     id: "jacket",
@@ -79,7 +79,7 @@ export const products: Product[] = [
     ],
     fabric: "14oz Raw Cotton Canvas / Silk-Cotton lining",
     weight: "Heavyweight Double-Weave",
-    drop: "DROP 02"
+    drop: "DROP 01"
   },
   {
     id: "longsleeve",
@@ -108,7 +108,7 @@ export const products: Product[] = [
     ],
     fabric: "95% Combed Cotton, 5% Elastane",
     weight: "320 GSM",
-    drop: "DROP 02"
+    drop: "DROP 01"
   },
   {
     id: "pants",
@@ -137,7 +137,7 @@ export const products: Product[] = [
     ],
     fabric: "13.5oz Japanese Selvage Denim",
     weight: "Medium-Heavy",
-    drop: "DROP 02"
+    drop: "DROP 01"
   },
   {
     id: "tshirt",
@@ -166,7 +166,7 @@ export const products: Product[] = [
     ],
     fabric: "100% Carded Cotton Jersey",
     weight: "300 GSM",
-    drop: "DROP 02"
+    drop: "DROP 01"
   },
   {
     id: "cap",
@@ -188,10 +188,10 @@ export const products: Product[] = [
       "Detailed oxblood gothic calligraphy embroidery on front",
       "Unstructured crown with pre-curved visor",
       "Self-fabric strapback with antique brass clamp",
-      "Inner label featuring drop information (DROP 02)"
+      "Inner label featuring drop information (DROP 01)"
     ],
     fabric: "100% Cotton Canvas",
     weight: "Lightweight, unstructured",
-    drop: "DROP 02"
+    drop: "DROP 01"
   }
 ];

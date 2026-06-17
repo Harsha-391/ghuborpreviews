@@ -103,7 +103,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
 
         {/* Bottom Details Bar */}
         <div className="w-full z-20 px-6 pb-6 md:px-12 md:pb-10 flex justify-between items-center text-[9px] sm:text-[10px] text-text-muted font-mono tracking-[0.2em] uppercase select-none">
-          <span>COVENANT DROP II</span>
+          <span>COVENANT DROP I</span>
           <button
             onClick={() => handleNavClick("about")}
             className="animate-bounce hover:text-primary transition-colors cursor-pointer"

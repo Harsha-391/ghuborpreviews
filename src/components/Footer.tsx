@@ -1,10 +1,18 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Mail } from "lucide-react";
 import { useImageConfig } from "./ImageConfigContext";
+import { fetchDropSettings, CMSDropSettings } from "../utils/cms";
 
 export default function Footer() {
   const { getImageUrl } = useImageConfig();
+  const [settings, setSettings] = useState<CMSDropSettings | null>(null);
+
+  useEffect(() => {
+    fetchDropSettings().then(setSettings);
+  }, []);
 
   return (
     <footer
@@ -39,14 +47,14 @@ export default function Footer() {
         {/* Action links */}
         <div className="flex flex-col sm:flex-row gap-6 items-center justify-center mb-16">
           <a
-            href="mailto:ritual@ghubor.com"
+            href="mailto:support@ghubor.com"
             className="inline-flex items-center gap-3 text-xs sm:text-sm font-light text-primary hover:text-white transition-colors tracking-widest uppercase border-b border-primary/20 pb-1"
           >
             <Mail className="w-4 h-4 text-primary/60" />
-            <span>ritual@ghubor.com</span>
+            <span>support@ghubor.com</span>
           </a>
           <a
-            href="https://instagram.com/ghubor"
+            href="https://instagram.com/ghubor.clothing"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-3 text-xs sm:text-sm font-light text-primary hover:text-white transition-colors tracking-widest uppercase border-b border-primary/20 pb-1"
@@ -67,7 +75,7 @@ export default function Footer() {
               <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
               <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
             </svg>
-            <span>@ghubor.mythos</span>
+            <span>@ghubor.clothing</span>
           </a>
         </div>
 
@@ -84,7 +92,7 @@ export default function Footer() {
             </div>
             <div className="text-left">
               <p className="text-[7px] text-text-dim font-mono uppercase tracking-widest">GARMENT N°</p>
-              <p className="text-[10px] text-primary font-mono font-medium">01-098 / DROP 02</p>
+              <p className="text-[10px] text-primary font-mono font-medium">01-098 / {settings ? settings.dropNumber : "DROP 01"}</p>
             </div>
           </div>
         </div>

@@ -383,7 +383,7 @@ export default function ProfilePage() {
             <div className="flex items-start gap-2.5 bg-[#090505] border border-white/5 rounded-xl p-3.5 mt-2">
               <ShieldAlert className="w-4 h-4 text-primary/60 shrink-0 mt-0.5" />
               <div className="text-[9px] text-gray-500 leading-normal uppercase">
-                Any discrepancies inside the inscription ledger must be reported via mail to ritual@ghubor.com.
+                Any discrepancies inside the inscription ledger must be reported via mail to support@ghubor.com.
               </div>
             </div>
 

@@ -2,21 +2,25 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Save, RefreshCw, Sparkles, Check, Image as ImageIcon,
   Sun, Moon, LayoutGrid, Package, BookOpen, Tag, Plus, Trash2,
   Globe, Lock, Search, X, Star, ToggleLeft, ToggleRight,
   Truck, TrendingUp, ShoppingBag, DollarSign, Users, Eye,
   BarChart2, AlertCircle, Upload, ChevronRight, Clock,
-  ArrowUpRight, Layers, Settings, Filter, ExternalLink, Zap
+  ArrowUpRight, Layers, Settings, Filter, ExternalLink, Zap,
+  Unlock, Loader2, EyeOff, Mail
 } from "lucide-react";
 import { useImageConfig, DEFAULT_IMAGE_CONFIGS, ImageConfigs } from "../../components/ImageConfigContext";
 import { useTheme } from "../../components/ThemeContext";
 import {
-  CMSProduct, CMSBlogPost, CMSCategory,
+  CMSProduct, CMSBlogPost, CMSCategory, CMSDropSettings,
   fetchProducts, saveProduct, deleteProduct, createEmptyProduct,
   fetchBlogPosts, saveBlogPost, deleteBlogPost, createEmptyBlogPost,
   fetchCategories, saveCategory, deleteCategory, createEmptyCategory,
+  fetchDropSettings, saveDropSettings,
+  fetchHomeProducts, saveHomeProduct, deleteHomeProduct, createEmptyHomeProduct
 } from "../../utils/cms";
 import {
   fetchAnalyticsSummary, fetchOrders, getTopProducts, getTopSearches,
@@ -26,7 +30,7 @@ import { uploadImage, createPreviewUrl, revokePreviewUrl, UploadFolder } from ".
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
-type AdminTab = "overview" | "images" | "products" | "blog" | "categories" | "orders" | "shipping";
+type AdminTab = "overview" | "images" | "products" | "blog" | "categories" | "orders" | "shipping" | "settings" | "home-products";
 
 const PREMIUM_LIGHT_PRESETS: Record<string, string> = {
   hero: "/images/hero-light.png",
@@ -764,7 +768,7 @@ function ProductsTab() {
               <FieldInput label="Category" value={editing.category} onChange={v => update("category", v)} placeholder="Tops / Bottoms" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <FieldInput label="Drop" value={editing.drop} onChange={v => update("drop", v)} placeholder="DROP 02" />
+              <FieldInput label="Drop" value={editing.drop} onChange={v => update("drop", v)} placeholder="DROP 01" />
               <FieldInput label="Order" value={String(editing.order)} onChange={v => update("order", parseInt(v) || 0)} placeholder="1" />
             </div>
             <FieldInput label="Short Description" value={editing.description} onChange={v => update("description", v)} multiline />
@@ -792,6 +796,270 @@ function ProductsTab() {
           <SectionCard title="Visibility">
             <ToggleField label="Published" value={editing.published} onChange={v => update("published", v)} />
             <ToggleField label="Featured" value={editing.featured} onChange={v => update("featured", v)} />
+          </SectionCard>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── HOMEPAGE PRODUCTS TAB ───────────────────────────────────────────────────
+
+function HomeProductsTab() {
+  const [products, setProducts] = useState<CMSProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<CMSProduct | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    fetchHomeProducts().then(d => {
+      setProducts(d);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = products.filter(p =>
+    p.title.toLowerCase().includes(search.toLowerCase()) ||
+    p.category.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleSave = async () => {
+    if (!editing) return;
+    setSaving(true);
+    await saveHomeProduct(editing);
+    setSaved(true);
+    setProducts(prev => {
+      const idx = prev.findIndex(p => p.id === editing.id);
+      if (idx > -1) {
+        const n = [...prev];
+        n[idx] = editing;
+        return n;
+      }
+      return [editing, ...prev];
+    });
+    setTimeout(() => {
+      setSaving(false);
+      setSaved(false);
+    }, 2000);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this homepage product card? Cannot be undone.")) return;
+    await deleteHomeProduct(id);
+    setProducts(prev => prev.filter(p => p.id !== id));
+    if (editing?.id === id) setEditing(null);
+  };
+
+  const update = (field: keyof CMSProduct, value: any) =>
+    setEditing(prev => prev ? { ...prev, [field]: value } : null);
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+    </div>
+  );
+
+  return (
+    <div className="flex gap-6 h-full min-h-[calc(100vh-200px)]">
+      {/* List */}
+      <div className={`flex flex-col gap-4 ${editing ? "w-80 hidden xl:flex shrink-0" : "w-full"}`}>
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search homepage cards..."
+              className="w-full bg-bg-card border border-border-theme rounded-full pl-9 pr-4 py-2.5 text-xs font-mono focus:border-primary focus:outline-none transition-colors"
+            />
+          </div>
+          <button
+            onClick={() => setEditing(createEmptyHomeProduct())}
+            className="bg-primary text-bg-page font-mono text-[10px] tracking-widest uppercase px-4 py-2.5 rounded-full flex items-center gap-2 hover:bg-primary/90 transition-colors shrink-0 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" /> New Card
+          </button>
+        </div>
+
+        <div className="space-y-2 overflow-y-auto flex-1 pr-1">
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+              <Package className="w-10 h-10 text-text-dim" />
+              <p className="text-sm text-text-muted">No homepage cards yet</p>
+              <button
+                onClick={() => setEditing(createEmptyHomeProduct())}
+                className="bg-primary/10 border border-primary/30 text-primary font-mono text-xs px-4 py-2 rounded-full hover:bg-primary/20 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 inline mr-1" />Create Card
+              </button>
+            </div>
+          ) : filtered.map(p => (
+            <div
+              key={p.id}
+              onClick={() => setEditing(p)}
+              className={`bg-bg-card border rounded-xl p-4 cursor-pointer group transition-all hover:border-primary/30 ${
+                editing?.id === p.id ? "border-primary/50 bg-primary/5" : "border-border-theme"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-14 bg-bg-page rounded-lg overflow-hidden shrink-0 border border-border-theme">
+                  {(p.darkImage || p.lightImage) && (
+                    <img
+                      src={p.darkImage || p.lightImage}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      onError={e => { (e.target as HTMLElement).style.opacity = "0"; }}
+                    />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <StatusBadge published={p.published} />
+                    {p.featured && <Star className="w-3 h-3 text-amber-400" />}
+                  </div>
+                  <p className="text-sm font-serif italic text-text-page truncate">{p.title || "Untitled"}</p>
+                  <p className="text-xs text-primary font-mono mt-0.5">{p.price || "Coming Soon"}</p>
+                  <p className="text-[10px] text-text-dim font-mono uppercase tracking-widest">{p.drop}</p>
+                </div>
+                <button
+                  onClick={e => { e.stopPropagation(); handleDelete(p.id); }}
+                  className="opacity-0 group-hover:opacity-100 text-text-dim hover:text-red-400 transition-all p-1 shrink-0 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Editor */}
+      {editing && (
+        <div className="flex-1 overflow-y-auto space-y-6 max-h-[calc(100vh-200px)] pr-2">
+          <div className="flex items-center justify-between sticky top-0 bg-bg-page/95 backdrop-blur-sm pb-4 border-b border-border-theme z-10 pt-2">
+            <div>
+              <span className="text-[10px] font-mono text-primary uppercase tracking-widest">Card ID: {editing.id}</span>
+              <h3 className="font-serif italic text-lg text-text-page">
+                {editing.title ? `Edit: ${editing.title}` : "New Homepage Card"}
+              </h3>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleDelete(editing.id)}
+                className="text-text-dim hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-400/10 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-primary text-bg-page font-mono text-xs tracking-widest uppercase px-5 py-2.5 rounded-full flex items-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {saved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                {saved ? "SAVED!" : saving ? "SAVING..." : "SAVE"}
+              </button>
+            </div>
+          </div>
+
+          <SectionCard title="Basic Info">
+            <FieldInput
+              label="Card Heading / Title"
+              value={editing.title}
+              onChange={v => update("title", v)}
+              placeholder="SACRED SHIELD HOODIE"
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FieldInput
+                label="Price Label (e.g. ₹6,800 or Coming Soon)"
+                value={editing.price}
+                onChange={v => update("price", v)}
+                placeholder="₹6,800"
+              />
+              <FieldInput
+                label="Category / Tag"
+                value={editing.category}
+                onChange={v => update("category", v)}
+                placeholder="Tops / Bottoms"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FieldInput
+                label="Drop Tag"
+                value={editing.drop}
+                onChange={v => update("drop", v)}
+                placeholder="DROP 01"
+              />
+              <FieldInput
+                label="Display Order"
+                value={String(editing.order)}
+                onChange={v => update("order", parseInt(v) || 0)}
+                placeholder="1"
+              />
+            </div>
+            <FieldInput
+              label="Short Description"
+              value={editing.description}
+              onChange={v => update("description", v)}
+              multiline
+            />
+            <FieldInput
+              label="Full Description (Warning Modal detail)"
+              value={editing.fullDescription}
+              onChange={v => update("fullDescription", v)}
+              multiline
+            />
+          </SectionCard>
+
+          <SectionCard title="Card Images" subtitle="Drag & drop images for dark and light themes">
+            <DualImageUploader
+              label="Primary Card Image"
+              darkValue={editing.darkImage}
+              lightValue={editing.lightImage}
+              onDarkChange={v => update("darkImage", v)}
+              onLightChange={v => update("lightImage", v)}
+              folder="products"
+            />
+          </SectionCard>
+
+          <SectionCard title="Details & Specifications">
+            <FieldInput
+              label="Fabric"
+              value={editing.fabric}
+              onChange={v => update("fabric", v)}
+              placeholder="100% Organic Cotton"
+            />
+            <FieldInput
+              label="Weight / GSM"
+              value={editing.weight}
+              onChange={v => update("weight", v)}
+              placeholder="480 GSM"
+            />
+            <TagListInput
+              label="Details / Specifications List"
+              value={editing.details}
+              onChange={v => update("details", v)}
+            />
+            <TagListInput
+              label="Care Instructions"
+              value={editing.howToUse}
+              onChange={v => update("howToUse", v)}
+            />
+          </SectionCard>
+
+          <SectionCard title="Visibility">
+            <ToggleField
+              label="Published / Visible on Home"
+              value={editing.published}
+              onChange={v => update("published", v)}
+            />
+            <ToggleField
+              label="Featured Card"
+              value={editing.featured}
+              onChange={v => update("featured", v)}
+            />
           </SectionCard>
         </div>
       )}
@@ -1282,6 +1550,108 @@ function ShippingTab() {
 
 // ─── MAIN ADMIN PAGE ──────────────────────────────────────────────────────────
 
+const SEEDED_ADMINS = [
+  { email: "admin@ghubor.com", password: "GibborProtected2026!" },
+  { email: "support@ghubor.com", password: "GhuborSanctuarySecure!" }
+];
+
+const getSeededAdmins = () => {
+  const envEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const envPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+  
+  const admins = [...SEEDED_ADMINS];
+  if (envEmail && envPassword) {
+    admins.push({ email: envEmail, password: envPassword });
+  }
+  return admins;
+};
+
+// ─── SETTINGS TAB ────────────────────────────────────────────────────────────
+
+function SettingsTab() {
+  const [settings, setSettings] = useState<CMSDropSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    fetchDropSettings().then((s) => {
+      setSettings(s);
+      setLoading(false);
+    });
+  }, []);
+
+  const update = (key: keyof CMSDropSettings, val: any) => {
+    if (!settings) return;
+    setSettings({ ...settings, [key]: val });
+  };
+
+  const handleSave = async () => {
+    if (!settings) return;
+    setSaving(true);
+    setSaved(false);
+    await saveDropSettings(settings);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  if (loading || !settings) return (
+    <div className="flex items-center justify-center h-64">
+      <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+    </div>
+  );
+
+  return (
+    <div className="max-w-xl mx-auto space-y-6">
+      <div className="flex justify-between items-center pb-4 border-b border-border-theme">
+        <div>
+          <h3 className="font-serif italic text-lg text-text-page">Global Drop Settings</h3>
+          <p className="text-[11px] text-text-dim mt-0.5">Manage the active drop identifiers, store lock state, and shipment notifications.</p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-primary text-bg-page font-mono text-xs tracking-widest uppercase px-5 py-2.5 rounded-full flex items-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
+        >
+          {saved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+          {saved ? "SAVED!" : saving ? "SAVING..." : "SAVE SETTINGS"}
+        </button>
+      </div>
+
+      <SectionCard title="Drop Identification">
+        <FieldInput
+          label="Active Drop Identifier"
+          value={settings.dropNumber}
+          onChange={(v) => update("dropNumber", v)}
+          placeholder="DROP 01"
+        />
+        <FieldInput
+          label="Active Drop Title"
+          value={settings.dropTitle}
+          onChange={(v) => update("dropTitle", v)}
+          placeholder="Wearable Scripture"
+        />
+      </SectionCard>
+
+      <SectionCard title="E-Commerce Lock Controls">
+        <ToggleField
+          label="Lock Shop & Checkout Pages"
+          value={settings.isLocked}
+          onChange={(v) => update("isLocked", v)}
+        />
+        <FieldInput
+          label="Shipment Preparation Notice"
+          value={settings.shipmentNotice}
+          onChange={(v) => update("shipmentNotice", v)}
+          placeholder="we are preparing drop 01. orders are not yet open..."
+          multiline
+        />
+      </SectionCard>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { configs, saveAllConfigs, resetToDefault, loading: imgLoading } = useImageConfig();
   const { theme, toggleTheme } = useTheme();
@@ -1295,12 +1665,62 @@ export default function AdminPage() {
   const [overviewPosts, setOverviewPosts] = useState<CMSBlogPost[]>([]);
   const [overviewCats, setOverviewCats] = useState<CMSCategory[]>([]);
 
+  // Admin Authentication States
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isAuth = sessionStorage.getItem("ghubor-admin-auth") === "true";
+      setIsAdminAuthenticated(isAuth);
+    }
+    setAuthChecking(false);
+  }, []);
+
   useEffect(() => { setFormState(configs); }, [configs]);
   useEffect(() => {
     fetchProducts().then(setOverviewProducts);
     fetchBlogPosts().then(setOverviewPosts);
     fetchCategories().then(setOverviewCats);
   }, []);
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    setAuthLoading(true);
+
+    setTimeout(() => {
+      const admins = getSeededAdmins();
+      const match = admins.find(
+        (admin) =>
+          admin.email.toLowerCase() === adminEmail.toLowerCase() &&
+          admin.password === adminPassword
+      );
+
+      if (match) {
+        setIsAdminAuthenticated(true);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("ghubor-admin-auth", "true");
+        }
+      } else {
+        setAuthError("The credentials entered are not recognized by the Sanctuary.");
+      }
+      setAuthLoading(false);
+    }, 1000);
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdminAuthenticated(false);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("ghubor-admin-auth");
+    }
+    setAdminPassword("");
+  };
 
   const handleSaveImages = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1334,7 +1754,137 @@ export default function AdminPage() {
     { id: "categories", label: "Categories", icon: Tag, desc: "Organize" },
     { id: "orders", label: "Orders", icon: ShoppingBag, desc: "All orders" },
     { id: "shipping", label: "Shipping", icon: Truck, desc: "Fulfillment" },
+    { id: "settings", label: "Settings", icon: Settings, desc: "Drop settings" },
+    { id: "home-products", label: "Homepage Cards", icon: Layers, desc: "Marquee products" },
   ];
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-bg-page flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <span className="text-xs font-mono text-text-muted uppercase tracking-widest">Validating Sanctuary Credentials...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdminAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#070202] text-[#E1E0CC] selection:bg-red-950 selection:text-primary relative overflow-x-hidden flex items-center justify-center p-4">
+        {/* Background elements */}
+        <div className="bg-noise absolute inset-0 opacity-[0.08] pointer-events-none z-0" />
+        <div className="absolute top-[20%] left-[-15%] w-[450px] h-[450px] bg-red-950/15 rounded-full blur-[140px] pointer-events-none z-0" />
+        <div className="absolute bottom-[20%] right-[-10%] w-[400px] h-[400px] bg-red-950/10 rounded-full blur-[140px] pointer-events-none z-0" />
+
+        <div className="w-full max-w-md bg-black/60 border border-white/5 rounded-3xl p-6 sm:p-8 relative shadow-2xl backdrop-blur-md z-10">
+          {/* Back to Home Link */}
+          <Link href="/" className="inline-flex items-center gap-2 text-[10px] font-mono tracking-widest text-text-dim hover:text-primary uppercase mb-6 transition-colors">
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Return to Sanctuary</span>
+          </Link>
+
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-10 h-10 rounded-xl bg-[#5C0606]/10 border border-[#5C0606]/35 flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-primary text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase block mb-3">
+              SANCTUARY CONTROL
+            </span>
+            <h1 className="font-serif italic text-3xl text-[#E1E0CC] font-light tracking-wide leading-none">
+              Admin Entry
+            </h1>
+            <div className="w-12 h-[1px] bg-primary/20 mx-auto mt-4" />
+          </div>
+
+          {/* Error Message */}
+          <AnimatePresence mode="wait">
+            {authError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-red-950/20 border border-red-900/40 text-[#ff8080] font-mono text-[10px] rounded-lg p-3.5 mb-6 uppercase tracking-wider leading-relaxed text-center"
+              >
+                {authError}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Login Form */}
+          <form onSubmit={handleAdminLogin} className="flex flex-col gap-4">
+            {/* Email Address */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] font-mono text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-primary/60" />
+                <span>Admin Email Address</span>
+              </label>
+              <input
+                type="email"
+                required
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="ADMIN@GHUBOR.COM"
+                className="bg-black/60 border border-white/10 rounded-lg p-3 text-xs font-mono text-primary outline-none focus:border-primary/50 transition-colors"
+              />
+            </div>
+
+            {/* Password */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] font-mono text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-primary/60" />
+                <span>Sanctuary Passcode</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="******"
+                  className="w-full bg-black/60 border border-white/10 rounded-lg p-3 pr-10 text-xs font-mono text-primary outline-none focus:border-primary/50 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white p-0.5 cursor-pointer"
+                  aria-label="Toggle Password Visibility"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full bg-primary hover:bg-[#D4D0BC] disabled:bg-primary/50 text-black font-mono font-medium text-xs tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase font-semibold mt-4 shadow-lg hover:shadow-primary/20"
+            >
+              {authLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>DECRYPTING VAULT...</span>
+                </>
+              ) : (
+                <>
+                  <span>UNLOCK PANEL</span>
+                  <Unlock className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Security details */}
+          <div className="flex items-center justify-center gap-2 text-[9px] text-gray-600 font-mono uppercase border-t border-white/5 pt-6 mt-6">
+            <Lock className="w-4 h-4 text-[#5C0606]" />
+            <span>SECURED ENTRYWAY ACTIVE</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (imgLoading) {
     return (
@@ -1379,6 +1929,11 @@ export default function AdminPage() {
                 ? <><Sun className="w-3.5 h-3.5 text-amber-400" /><span className="hidden sm:inline">Light</span></>
                 : <><Moon className="w-3.5 h-3.5 text-violet-400" /><span className="hidden sm:inline">Dark</span></>
               }
+            </button>
+            <button onClick={handleAdminLogout}
+              className="flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase border border-red-500/20 hover:border-red-500/50 text-red-400 hover:text-red-300 px-3 py-2 rounded-full transition-all duration-300 cursor-pointer bg-red-950/10 hover:bg-red-950/30">
+              <Lock className="w-3.5 h-3.5 text-red-500" />
+              <span className="hidden sm:inline">Lock Panel</span>
             </button>
           </div>
         </div>
@@ -1425,6 +1980,8 @@ export default function AdminPage() {
         {activeTab === "categories" && <CategoriesTab />}
         {activeTab === "orders" && <OrdersTab />}
         {activeTab === "shipping" && <ShippingTab />}
+        {activeTab === "settings" && <SettingsTab />}
+        {activeTab === "home-products" && <HomeProductsTab />}
       </main>
     </div>
   );

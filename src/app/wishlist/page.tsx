@@ -64,13 +64,13 @@ export default function WishlistPage() {
                 className="flex flex-col sm:flex-row gap-6 items-center bg-black/60 border border-white/5 rounded-2xl p-6 hover:border-primary/20 transition-all duration-300"
               >
                 {/* Product Image */}
-                <Link href={`/shop/${item.id}`} className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-black/40 border border-white/5 shrink-0">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-black/40 border border-white/5 shrink-0 select-none">
                   <img
                     src={item.image}
                     alt={item.title}
                     className="w-full h-full object-cover object-center"
                   />
-                </Link>
+                </div>
 
                 {/* Info */}
                 <div className="flex-grow text-center sm:text-left">
@@ -78,25 +78,21 @@ export default function WishlistPage() {
                     {item.drop}
                   </span>
                   <h3 className="text-sm sm:text-base font-semibold tracking-widest text-[#E1E0CC] uppercase mt-2">
-                    <Link href={`/shop/${item.id}`}>{item.title}</Link>
+                    {item.title}
                   </h3>
                   <p className="text-xs text-gray-500 font-light mt-1 uppercase tracking-wider">{item.fabric}</p>
                   <p className="text-xs text-primary/80 font-mono mt-2">{item.price}</p>
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0 mt-4 sm:mt-0">
-                  <Link
-                    href={`/shop/${item.id}`}
-                    className="flex-grow sm:flex-grow-0 bg-primary hover:bg-[#D4D0BC] text-black font-mono font-medium text-[10px] tracking-widest py-3 px-5 rounded-full text-center transition-all duration-300 flex items-center justify-center gap-1.5 uppercase"
-                  >
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>ACQUIRE</span>
-                  </Link>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0 mt-4 sm:mt-0 items-center justify-center">
+                  <span className="bg-[#5C0606]/15 border border-[#5C0606]/35 text-primary font-mono text-[9px] tracking-widest py-3 px-5 rounded-full text-center uppercase select-none w-full sm:w-auto font-medium shadow-[0_0_8px_rgba(92,6,6,0.1)]">
+                    COMING SOON
+                  </span>
 
                   <button
                     onClick={() => handleRemove(item.id)}
-                    className="flex-grow sm:flex-grow-0 bg-transparent hover:bg-white/5 border border-white/5 hover:border-white/10 text-gray-500 hover:text-red-500 font-mono text-[10px] py-3 px-4 rounded-full transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer uppercase"
+                    className="w-full sm:w-auto bg-transparent hover:bg-white/5 border border-white/5 hover:border-white/10 text-gray-500 hover:text-red-500 font-mono text-[10px] py-3 px-4 rounded-full transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer uppercase"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>REMOVE</span>
@@ -107,10 +103,10 @@ export default function WishlistPage() {
 
             <div className="mt-12 text-center">
               <Link
-                href="/shop"
+                href="/"
                 className="inline-flex items-center gap-2 text-xs font-mono text-primary/80 hover:text-white uppercase tracking-widest border-b border-primary/20 pb-1 hover:border-white transition-all duration-300"
               >
-                <span>MARK MORE ARTIFACTS</span>
+                <span>RETURN TO FOUNDATION</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -120,13 +116,13 @@ export default function WishlistPage() {
             <Heart className="w-8 h-8 text-gray-700 mx-auto mb-6" />
             <h2 className="text-base text-primary uppercase tracking-widest mb-2 font-mono">Wishlist is Silent</h2>
             <p className="text-xs text-gray-500 font-light max-w-sm mx-auto mb-8 leading-relaxed">
-              No artifacts have been marked. Visit the Sanctuary archives to secure your selections before they expire.
+              No artifacts have been marked. Visit the Sanctuary foundation to secure your selections in your wishlist directly from the home page.
             </p>
             <Link
-              href="/shop"
+              href="/"
               className="inline-flex items-center gap-2 bg-primary text-black font-mono text-xs px-6 py-3 rounded-full font-medium tracking-widest transition-transform duration-300 hover:scale-102"
             >
-              <span>EXPLORE ARCHIVES</span>
+              <span>EXPLORE FOUNDATION</span>
             </Link>
           </div>
         )}

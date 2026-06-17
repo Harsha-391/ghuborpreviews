@@ -1,15 +1,31 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Heart } from "lucide-react";
+import { ArrowRight, Heart, X, Lock } from "lucide-react";
 import { products } from "../data/products";
 import { toggleWishlist, isInWishlist } from "../utils/store";
 import { useImageConfig } from "./ImageConfigContext";
+import { useTheme } from "./ThemeContext";
+import { fetchDropSettings, fetchHomeProducts, CMSDropSettings } from "../utils/cms";
 
 export default function ProductLineup() {
-  const ease = [0.16, 1, 0.3, 1] as const;
+  const [settings, setSettings] = useState<CMSDropSettings | null>(null);
+  const [displayProducts, setDisplayProducts] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
-  // Show only 6 products (we have exactly 6 in our data source)
-  const lineupProducts = products.slice(0, 6);
+  useEffect(() => {
+    fetchDropSettings().then(setSettings);
+    
+    fetchHomeProducts().then((dbProducts) => {
+      if (dbProducts && dbProducts.length > 0) {
+        // Filter out unpublished items
+        setDisplayProducts(dbProducts.filter(p => p.published !== false));
+      } else {
+        setDisplayProducts(products);
+      }
+    });
+  }, []);
 
   return (
     <section
@@ -57,24 +73,36 @@ export default function ProductLineup() {
             THE CURRENT DROP
           </span>
           <h2 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-text-page font-light tracking-wide leading-none">
-            Drop 02: Wearable Scripture
+            {settings ? `${settings.dropNumber}: ${settings.dropTitle}` : "Drop 01: Wearable Scripture"}
           </h2>
           <div className="w-12 h-[1px] bg-primary/20 mx-auto mt-6" />
         </div>
 
         {/* Horizontal Marquee Container with edge fading */}
-        <div className="w-full overflow-hidden py-4 flex marquee-mask">
-          <div className="animate-products-marquee px-[15vw]">
-            {/* First Set of 6 */}
-            {lineupProducts.map((product) => (
-              <ProductCard key={`${product.id}-set1`} product={product} />
-            ))}
-            {/* Repeated Set of 6 for Infinite Loop */}
-            {lineupProducts.map((product) => (
-              <ProductCard key={`${product.id}-set2`} product={product} />
-            ))}
+        {displayProducts.length > 0 && (
+          <div className="w-full overflow-hidden py-4 flex marquee-mask">
+            <div className="animate-products-marquee px-[15vw]">
+              {/* First Set */}
+              {displayProducts.map((product) => (
+                <ProductCard
+                  key={`${product.id}-set1`}
+                  product={product}
+                  settings={settings}
+                  onClick={() => setSelectedProduct(product)}
+                />
+              ))}
+              {/* Repeated Set for Infinite Loop */}
+              {displayProducts.map((product) => (
+                <ProductCard
+                  key={`${product.id}-set2`}
+                  product={product}
+                  settings={settings}
+                  onClick={() => setSelectedProduct(product)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* See All Products Redirect CTA */}
         <div className="mt-16 text-center px-4 sm:px-6 lg:px-8">
@@ -89,13 +117,29 @@ export default function ProductLineup() {
           </Link>
         </div>
       </div>
+
+      {/* Warning Modal */}
+      {selectedProduct && (
+        <ShipmentModal
+          product={selectedProduct}
+          settings={settings}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </section>
   );
 }
 
-// Sub-component for individual product card inside marquee
-function ProductCard({ product }: { product: any }) {
+// ─── CARD SUB-COMPONENT ──────────────────────────────────────────────────────
+interface ProductCardProps {
+  product: any;
+  settings: CMSDropSettings | null;
+  onClick: () => void;
+}
+
+function ProductCard({ product, settings, onClick }: ProductCardProps) {
   const [wishlisted, setWishlisted] = useState(false);
+  const { theme } = useTheme();
   const { getImageUrl } = useImageConfig();
 
   useEffect(() => {
@@ -117,16 +161,33 @@ function ProductCard({ product }: { product: any }) {
     toggleWishlist(product.id);
   };
 
+  const getProductImage = () => {
+    // 1. Check general theme overrides from Images Tab in Admin
+    const customized = getImageUrl("product-" + product.id);
+    if (customized && !customized.includes("fallback")) return customized;
+    
+    // 2. Otherwise use the product's direct fields
+    if (theme === "light") {
+      return product.lightImage || product.image || "/images/products/fallback.png";
+    }
+    return product.darkImage || product.image || "/images/products/fallback.png";
+  };
+
   return (
-    <div className="w-[280px] sm:w-[320px] shrink-0 flex flex-col h-[480px] bg-bg-card border border-border-theme rounded-2xl overflow-hidden transition-all duration-500 hover:border-primary/20 hover:bg-bg-card-alt hover:shadow-[0_15px_40px_rgba(92,6,6,0.06)] whitespace-normal group relative">
+    <div
+      onClick={onClick}
+      className="w-[280px] sm:w-[320px] shrink-0 flex flex-col h-[480px] bg-bg-card border border-border-theme rounded-2xl overflow-hidden transition-all duration-500 hover:border-primary/20 hover:bg-bg-card-alt hover:shadow-[0_15px_40px_rgba(92,6,6,0.06)] whitespace-normal group relative cursor-pointer"
+    >
       {/* Product Image Frame */}
-      <Link href={`/shop/${product.id}`} className="relative block aspect-[4/5] w-full overflow-hidden bg-bg-page/40">
+      <div className="relative block aspect-[4/5] w-full overflow-hidden bg-bg-page/40">
         <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-bg-page/70 backdrop-blur-md border border-border-theme rounded-full px-3 py-1">
           <span className="w-1.5 h-1.5 rounded-full bg-[#5C0606] animate-pulse" />
-          <span className="text-[9px] font-mono text-primary/80 uppercase tracking-widest">{product.drop}</span>
+          <span className="text-[9px] font-mono text-primary/80 uppercase tracking-widest">
+            {settings ? settings.dropNumber : (product.drop || "DROP 01")}
+          </span>
         </div>
 
-        {/* Limited tag moved to left to avoid overlapping the heart button */}
+        {/* Limited tag */}
         <div className="absolute top-4 right-14 z-20 bg-bg-page/40 backdrop-blur-sm border border-border-theme rounded px-2 py-0.5">
           <span className="text-[8px] font-mono text-text-muted tracking-wider">LIMITED / 64</span>
         </div>
@@ -134,14 +195,14 @@ function ProductCard({ product }: { product: any }) {
         {/* Floating Heart Button */}
         <button
           onClick={handleHeartClick}
-          className="absolute top-3.5 right-4 z-30 p-2 rounded-full bg-black/60 hover:bg-black/85 border border-white/10 text-primary/80 hover:text-white transition-all cursor-pointer shadow-lg"
+          className="absolute top-3.5 right-4 z-30 p-2 rounded-full bg-black/60 hover:bg-black/85 border border-white/10 text-primary/70 hover:text-white transition-all cursor-pointer shadow-lg"
           aria-label="Add to Wishlist"
         >
           <Heart className={`w-3.5 h-3.5 transition-colors ${wishlisted ? "fill-red-600 text-red-600 border-none" : "text-primary/70"}`} />
         </button>
 
         <img
-          src={getImageUrl("product-" + product.id, product.image)}
+          src={getProductImage()}
           alt={product.title}
           loading="lazy"
           className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-95 group-hover:brightness-100"
@@ -150,18 +211,18 @@ function ProductCard({ product }: { product: any }) {
         <div className="absolute inset-0 bg-gradient-to-t from-bg-page via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
         
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <span className="bg-primary text-bg-page font-mono text-xs px-5 py-2.5 rounded-full font-medium tracking-widest shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-            EXAMINE ARTIFACT
+          <span className="bg-primary text-bg-page font-mono text-[10px] px-5 py-2.5 rounded-full font-medium tracking-widest shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+            VIEW GARMENT
           </span>
         </div>
-      </Link>
+      </div>
 
       {/* Product Info */}
       <div className="p-5 flex flex-col justify-between flex-grow">
         <div>
           <div className="flex justify-between items-baseline mb-2">
             <h3 className="text-xs sm:text-sm font-semibold tracking-widest text-text-page group-hover:text-primary transition-colors uppercase truncate max-w-[170px] sm:max-w-[200px]">
-              <Link href={`/shop/${product.id}`}>{product.title}</Link>
+              {product.title}
             </h3>
             <span className="text-xs sm:text-sm font-mono font-medium text-primary/80 ml-2">
               {product.price}
@@ -178,13 +239,128 @@ function ProductCard({ product }: { product: any }) {
             {product.weight}
           </span>
           
-          <Link
-            href={`/shop/${product.id}`}
-            className="inline-flex items-center gap-1 text-[10px] font-light text-primary hover:text-white transition-colors uppercase tracking-widest"
+          <button
+            onClick={handleHeartClick}
+            className="inline-flex items-center gap-1.5 text-[10px] font-light text-primary hover:text-white transition-colors uppercase tracking-widest cursor-pointer"
           >
-            <span>DETAILS</span>
-            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+            <span>{wishlisted ? "WISHLISTED" : "ADD TO WISHLIST"}</span>
+            <Heart className={`w-3 h-3 ${wishlisted ? "fill-red-600 text-red-600 border-none" : "text-primary/70"}`} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── WARNING MODAL SUB-COMPONENT ─────────────────────────────────────────────
+interface ShipmentModalProps {
+  product: any;
+  settings: CMSDropSettings | null;
+  onClose: () => void;
+}
+
+function ShipmentModal({ product, settings, onClose }: ShipmentModalProps) {
+  const [wishlisted, setWishlisted] = useState(false);
+  const { theme } = useTheme();
+  const { getImageUrl } = useImageConfig();
+
+  useEffect(() => {
+    setWishlisted(isInWishlist(product.id));
+
+    const handleUpdate = () => {
+      setWishlisted(isInWishlist(product.id));
+    };
+
+    window.addEventListener("wishlist-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("wishlist-updated", handleUpdate);
+    };
+  }, [product.id]);
+
+  const handleWishlistToggle = () => {
+    toggleWishlist(product.id);
+  };
+
+  const getProductImage = () => {
+    const customized = getImageUrl("product-" + product.id);
+    if (customized && !customized.includes("fallback")) return customized;
+    if (theme === "light") {
+      return product.lightImage || product.image || "/images/products/fallback.png";
+    }
+    return product.darkImage || product.image || "/images/products/fallback.png";
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[#0B0B0B] border border-border-theme rounded-2xl max-w-md w-full overflow-hidden shadow-[0_25px_60px_rgba(92,6,6,0.15)] relative animate-in fade-in zoom-in-95 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-text-muted hover:text-white transition-colors z-20 cursor-pointer p-1 rounded-full hover:bg-white/5"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Diagonal Warning Accent Band */}
+        <div className="h-1.5 bg-gradient-to-r from-[#5C0606] via-[#A82525] to-[#5C0606] w-full" />
+
+        <div className="p-6 sm:p-8 flex flex-col items-center text-center">
+          {/* Header Warning Circle */}
+          <div className="w-14 h-14 rounded-full bg-[#5C0606]/10 border border-[#5C0606]/35 flex items-center justify-center text-primary mb-6 shadow-[0_0_20px_rgba(92,6,6,0.1)]">
+            <Lock className="w-6 h-6 animate-pulse" />
+          </div>
+
+          <span className="text-[10px] font-mono tracking-[0.3em] text-primary uppercase mb-2">
+            SHIPMENT IN PREPARATION
+          </span>
+          
+          <h3 className="font-serif italic text-2xl text-text-page font-light leading-tight mb-4">
+            {product.title}
+          </h3>
+
+          <div className="w-8 h-[1px] bg-primary/20 mb-5" />
+
+          {/* Product image mini preview */}
+          <div className="w-24 h-24 rounded-lg overflow-hidden bg-bg-page/30 border border-border-theme/80 mb-5 relative">
+            <img
+              src={getProductImage()}
+              alt={product.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/20" />
+          </div>
+
+          <p className="text-xs text-text-muted font-light leading-relaxed mb-6 whitespace-pre-line">
+            {settings ? settings.shipmentNotice : `We are currently getting the shipment ready for Drop 01. 
+            All checkouts and acquisitions are sealed at this moment. 
+            Secure this artifact in your wishlist to receive immediate release coordinates and notifications.`}
+          </p>
+
+          <div className="w-full flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={handleWishlistToggle}
+              className={`flex-1 inline-flex items-center justify-center gap-2 rounded-full py-3 px-6 text-xs font-mono font-medium tracking-wider transition-all duration-300 cursor-pointer ${
+                wishlisted
+                  ? "bg-red-950/40 border border-red-800/60 text-red-200 hover:bg-red-900/40"
+                  : "bg-primary text-bg-page hover:bg-white hover:text-black shadow-lg"
+              }`}
+            >
+              <Heart className={`w-3.5 h-3.5 ${wishlisted ? "fill-red-400 text-red-400" : ""}`} />
+              <span>{wishlisted ? "WISHLISTED" : "SECURE TO WISHLIST"}</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 rounded-full border border-border-theme hover:border-text-muted text-text-muted hover:text-white py-3 px-6 text-xs font-mono font-medium tracking-wider transition-all cursor-pointer bg-transparent"
+            >
+              CLOSE ARCHIVE
+            </button>
+          </div>
         </div>
       </div>
     </div>

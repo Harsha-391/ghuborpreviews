@@ -138,7 +138,7 @@ export function createEmptyProduct(): CMSProduct {
     fullDescription: "",
     fabric: "",
     weight: "",
-    drop: "DROP 02",
+    drop: "DROP 01",
     category: "",
     darkImage: "",
     lightImage: "",
@@ -328,3 +328,151 @@ function deleteLocalItem(key: string, id: string) {
   const list: any[] = s ? JSON.parse(s) : [];
   localStorage.setItem(key, JSON.stringify(list.filter((x) => x.id !== id)));
 }
+
+// ─── DROP SETTINGS ───────────────────────────────────────────────────────────
+
+export interface CMSDropSettings {
+  id: string;
+  dropNumber: string;
+  dropTitle: string;
+  isLocked: boolean;
+  shipmentNotice: string;
+}
+
+export async function fetchDropSettings(): Promise<CMSDropSettings> {
+  const defaultSettings: CMSDropSettings = {
+    id: "drop-settings",
+    dropNumber: "DROP 01",
+    dropTitle: "Wearable Scripture",
+    isLocked: true,
+    shipmentNotice: "we are preparing drop 01. \norders are not yet open. \nwe will notify you when the ritual begins."
+  };
+  if (!db) return getLocalDropSettings(defaultSettings);
+  try {
+    const docRef = doc(db, "cms-settings", "drop-settings");
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data() as CMSDropSettings;
+      setLocalDropSettings(data);
+      return data;
+    } else {
+      // Seed default settings to Firestore
+      await setDoc(docRef, defaultSettings);
+      setLocalDropSettings(defaultSettings);
+      return defaultSettings;
+    }
+  } catch (err) {
+    console.warn("fetchDropSettings: Firestore failed, using local.", err);
+    return getLocalDropSettings(defaultSettings);
+  }
+}
+
+export async function saveDropSettings(settings: CMSDropSettings): Promise<void> {
+  if (!db) {
+    setLocalDropSettings(settings);
+    return;
+  }
+  try {
+    const docRef = doc(db, "cms-settings", "drop-settings");
+    await setDoc(docRef, settings);
+    setLocalDropSettings(settings);
+  } catch (err) {
+    console.error("saveDropSettings failed:", err);
+    setLocalDropSettings(settings);
+  }
+}
+
+function getLocalDropSettings(fallback: CMSDropSettings): CMSDropSettings {
+  if (typeof window === "undefined") return fallback;
+  const s = localStorage.getItem("ghubor-cms-drop-settings");
+  return s ? JSON.parse(s) : fallback;
+}
+
+function setLocalDropSettings(settings: CMSDropSettings) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("ghubor-cms-drop-settings", JSON.stringify(settings));
+}
+
+// ─── HOMEPAGE PRODUCTS ────────────────────────────────────────────────────────
+
+export async function fetchHomeProducts(): Promise<CMSProduct[]> {
+  if (!db) return getLocalHomeProducts();
+  try {
+    const q = query(collection(db, "cms-home-products"), orderBy("order", "asc"));
+    const snap = await getDocs(q);
+    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() } as CMSProduct));
+    setLocalHomeProducts(items);
+    return items;
+  } catch (err) {
+    console.warn("fetchHomeProducts: Firestore failed, using local.", err);
+    return getLocalHomeProducts();
+  }
+}
+
+export async function saveHomeProduct(product: CMSProduct): Promise<void> {
+  const updated = { ...product, updatedAt: now() };
+  if (!db) {
+    upsertLocalItem("ghubor-cms-home-products", updated);
+    return;
+  }
+  try {
+    const ref = doc(db, "cms-home-products", product.id);
+    await setDoc(ref, updated);
+    upsertLocalItem("ghubor-cms-home-products", updated);
+  } catch (err) {
+    console.error("saveHomeProduct failed:", err);
+    upsertLocalItem("ghubor-cms-home-products", updated);
+  }
+}
+
+export async function deleteHomeProduct(id: string): Promise<void> {
+  if (!db) {
+    deleteLocalItem("ghubor-cms-home-products", id);
+    return;
+  }
+  try {
+    await deleteDoc(doc(db, "cms-home-products", id));
+    deleteLocalItem("ghubor-cms-home-products", id);
+  } catch (err) {
+    console.error("deleteHomeProduct failed:", err);
+    deleteLocalItem("ghubor-cms-home-products", id);
+  }
+}
+
+export function createEmptyHomeProduct(): CMSProduct {
+  return {
+    id: generateId("home-prod"),
+    title: "",
+    price: "",
+    description: "",
+    fullDescription: "",
+    fabric: "",
+    weight: "",
+    drop: "DROP 01",
+    category: "",
+    darkImage: "",
+    lightImage: "",
+    galleryDark: [],
+    galleryLight: [],
+    details: [],
+    howToUse: [],
+    featured: false,
+    published: true,
+    order: 99,
+    createdAt: now(),
+    updatedAt: now(),
+  };
+}
+
+function getLocalHomeProducts(): CMSProduct[] {
+  if (typeof window === "undefined") return [];
+  const s = localStorage.getItem("ghubor-cms-home-products");
+  return s ? JSON.parse(s) : [];
+}
+
+function setLocalHomeProducts(items: CMSProduct[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("ghubor-cms-home-products", JSON.stringify(items));
+}
+
+
