@@ -5,6 +5,9 @@ export interface SizeMeasurement {
   sleeve?: string;
   waist?: string;
   inseam?: string;
+  acrossShoulder?: string;
+  bottom?: string;
+  neckline?: string;
 }
 
 export interface Product {
@@ -159,10 +162,10 @@ export const products: Product[] = [
       "Wash cold inside out; iron graphic on reverse side only."
     ],
     sizeScale: [
-      { size: "S", chest: "46 inches", length: "26.5 inches" },
-      { size: "M", chest: "48 inches", length: "27.5 inches" },
-      { size: "L", chest: "50 inches", length: "28.5 inches" },
-      { size: "XL", chest: "52 inches", length: "29.5 inches" }
+      { size: "S", chest: "42 in", length: "25.5 in", acrossShoulder: "19.5 in", sleeve: "8.0 in", bottom: "43 in", neckline: "7.5 in" },
+      { size: "M", chest: "44 in", length: "26.0 in", acrossShoulder: "20.0 in", sleeve: "8.5 in", bottom: "45 in", neckline: "7.5 in" },
+      { size: "L", chest: "46 in", length: "26.5 in", acrossShoulder: "20.5 in", sleeve: "9.0 in", bottom: "47 in", neckline: "7.5 in" },
+      { size: "XL", chest: "48 in", length: "27.0 in", acrossShoulder: "21.0 in", sleeve: "9.5 in", bottom: "49 in", neckline: "7.5 in" }
     ],
     details: [
       "300GSM Carded Cotton jersey",

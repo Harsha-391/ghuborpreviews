@@ -113,10 +113,10 @@ export default function ProductDetailPage() {
 
   // Safe Fallbacks for Custom CMS Products
   const sizeScale = product.sizeScale || [
-    { size: "S", chest: "48 inches", length: "27 inches", sleeve: "24.5 inches" },
-    { size: "M", chest: "50 inches", length: "28 inches", sleeve: "25 inches" },
-    { size: "L", chest: "52 inches", length: "29 inches", sleeve: "25.5 inches" },
-    { size: "XL", chest: "54 inches", length: "30 inches", sleeve: "26 inches" }
+    { size: "S", chest: "42 in", length: "25.5 in", acrossShoulder: "19.5 in", sleeve: "8.0 in", bottom: "43 in", neckline: "7.5 in" },
+    { size: "M", chest: "44 in", length: "26.0 in", acrossShoulder: "20.0 in", sleeve: "8.5 in", bottom: "45 in", neckline: "7.5 in" },
+    { size: "L", chest: "46 in", length: "26.5 in", acrossShoulder: "20.5 in", sleeve: "9.0 in", bottom: "47 in", neckline: "7.5 in" },
+    { size: "XL", chest: "48 in", length: "27.0 in", acrossShoulder: "21.0 in", sleeve: "9.5 in", bottom: "49 in", neckline: "7.5 in" }
   ];
   const details = product.details || [
     "480GSM Heavyweight Streetwear Build",
@@ -313,9 +313,24 @@ export default function ProductDetailPage() {
                         Length: {sizeScale.find((s) => s.size === selectedSize)?.length}
                       </span>
                     )}
+                    {sizeScale.find((s) => s.size === selectedSize)?.acrossShoulder && (
+                      <span className="text-primary ml-2">
+                        Shoulder: {sizeScale.find((s) => s.size === selectedSize)?.acrossShoulder}
+                      </span>
+                    )}
                     {sizeScale.find((s) => s.size === selectedSize)?.sleeve && (
                       <span className="text-primary ml-2">
                         Sleeve: {sizeScale.find((s) => s.size === selectedSize)?.sleeve}
+                      </span>
+                    )}
+                    {sizeScale.find((s) => s.size === selectedSize)?.bottom && (
+                      <span className="text-primary ml-2">
+                        Bottom: {sizeScale.find((s) => s.size === selectedSize)?.bottom}
+                      </span>
+                    )}
+                    {sizeScale.find((s) => s.size === selectedSize)?.neckline && (
+                      <span className="text-primary ml-2">
+                        Neckline: {sizeScale.find((s) => s.size === selectedSize)?.neckline}
                       </span>
                     )}
                     {sizeScale.find((s) => s.size === selectedSize)?.waist && (
@@ -508,7 +523,10 @@ export default function ProductDetailPage() {
                           <th className="p-4 uppercase tracking-wider font-light">Size Option</th>
                           {sizeScale[0]?.chest && <th className="p-4 uppercase tracking-wider font-light">Chest Width</th>}
                           {sizeScale[0]?.length && <th className="p-4 uppercase tracking-wider font-light">Garment Length</th>}
+                          {sizeScale[0]?.acrossShoulder && <th className="p-4 uppercase tracking-wider font-light">Across Shoulder</th>}
                           {sizeScale[0]?.sleeve && <th className="p-4 uppercase tracking-wider font-light">Sleeve Length</th>}
+                          {sizeScale[0]?.bottom && <th className="p-4 uppercase tracking-wider font-light">Bottom</th>}
+                          {sizeScale[0]?.neckline && <th className="p-4 uppercase tracking-wider font-light">Neckline</th>}
                           {sizeScale[0]?.waist && <th className="p-4 uppercase tracking-wider font-light">Waist Circumference</th>}
                           {sizeScale[0]?.inseam && <th className="p-4 uppercase tracking-wider font-light">Inseam Length</th>}
                         </tr>
@@ -527,7 +545,10 @@ export default function ProductDetailPage() {
                             </td>
                             {row.chest && <td className="p-4">{row.chest}</td>}
                             {row.length && <td className="p-4">{row.length}</td>}
+                            {row.acrossShoulder && <td className="p-4">{row.acrossShoulder}</td>}
                             {row.sleeve && <td className="p-4">{row.sleeve}</td>}
+                            {row.bottom && <td className="p-4">{row.bottom}</td>}
+                            {row.neckline && <td className="p-4">{row.neckline}</td>}
                             {row.waist && <td className="p-4">{row.waist}</td>}
                             {row.inseam && <td className="p-4">{row.inseam}</td>}
                           </tr>
