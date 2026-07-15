@@ -27,7 +27,7 @@ export default function CartPage() {
 
   useEffect(() => {
     const loadAllProducts = async () => {
-      let mergedProducts = [...products];
+      let mergedProducts: any[] = [...products];
       try {
         if (db) {
           const { collection, getDocs } = await import("firebase/firestore");
