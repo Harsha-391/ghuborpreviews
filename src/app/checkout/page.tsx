@@ -4,15 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck, ShoppingBag, CornerDownRight, Key, Loader2 } from "lucide-react";
+import { ArrowRight, ShieldCheck, ShoppingBag, CornerDownRight } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { products, Product } from "../../data/products";
 import { getCart } from "../../utils/store";
 import { useAuth } from "../../components/AuthContext";
 import WaxSeal from "../../components/WaxSeal";
-import { auth, db } from "../../utils/firebase";
-import { RecaptchaVerifier, PhoneAuthProvider, linkWithCredential } from "firebase/auth";
+import { db } from "../../utils/firebase";
 
 interface DisplayCartItem {
   product: Product;
@@ -34,50 +33,6 @@ export default function CheckoutPage() {
     city: "",
     zip: "",
   });
-
-  // OTP Verification States
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [verificationId, setVerificationId] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpError, setOtpError] = useState("");
-  const [otpTimer, setOtpTimer] = useState(0);
-
-  // Setup RecaptchaVerifier on mount
-  useEffect(() => {
-    if (typeof window !== "undefined" && auth && !(window as any).checkoutRecaptchaVerifier) {
-      try {
-        (window as any).checkoutRecaptchaVerifier = new RecaptchaVerifier(auth, "checkout-recaptcha-container", {
-          size: "invisible",
-          callback: () => {},
-          "expired-callback": () => {}
-        });
-      } catch (err) {
-        console.error("Error creating RecaptchaVerifier on checkout:", err);
-      }
-    }
-
-    return () => {
-      if ((window as any).checkoutRecaptchaVerifier) {
-        try {
-          (window as any).checkoutRecaptchaVerifier.clear();
-          (window as any).checkoutRecaptchaVerifier = undefined;
-        } catch (e) {
-          // ignore
-        }
-      }
-    };
-  }, []);
-
-  // OTP countdown timer
-  useEffect(() => {
-    if (otpTimer > 0) {
-      const interval = setInterval(() => {
-        setOtpTimer((prev) => prev - 1);
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [otpTimer]);
 
   // Pre-fill user profile credentials
   useEffect(() => {
@@ -231,98 +186,14 @@ export default function CheckoutPage() {
     });
   };
 
-  const formatPhoneNumber = (rawPhone: string) => {
-    const cleaned = rawPhone.replace(/\D/g, "");
-    if (rawPhone.trim().startsWith("+")) {
-      return rawPhone.trim().replace(/[\s-]/g, "");
-    }
-    if (cleaned.length === 10) {
-      return `+91${cleaned}`;
-    }
-    if (cleaned.length === 12 && cleaned.startsWith("91")) {
-      return `+${cleaned}`;
-    }
-    return `+${cleaned}`;
-  };
-
-  const sendOtpSms = async (phoneNumber: string) => {
-    if (!auth) {
-      throw new Error("Sanctuary database keys are not configured yet.");
-    }
-    
-    let verifier = (window as any).checkoutRecaptchaVerifier;
-    if (!verifier) {
-      verifier = new RecaptchaVerifier(auth, "checkout-recaptcha-container", {
-        size: "invisible"
-      });
-      (window as any).checkoutRecaptchaVerifier = verifier;
-    }
-
-    const phoneProvider = new PhoneAuthProvider(auth);
-    const verId = await phoneProvider.verifyPhoneNumber(phoneNumber, verifier);
-    setVerificationId(verId);
-    setOtpTimer(60);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.zip) {
-      alert("Please fill in all ritual shipping fields to proceed.");
+      alert("Please fill in all shipping fields to proceed.");
       return;
     }
-    
-    setOtpError("");
-    setOtpLoading(true);
-    try {
-      const formattedPhone = formatPhoneNumber(formData.phone);
-      await sendOtpSms(formattedPhone);
-      setShowOtpModal(true);
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Failed to initiate SMS verification ritual. Please check the contact number.");
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otpCode || otpCode.length !== 6) {
-      setOtpError("Please enter a valid 6-digit verification code.");
-      return;
-    }
-
-    setOtpLoading(true);
-    setOtpError("");
-    try {
-      if (!auth) throw new Error("Sanctuary authentication is not configured.");
-      
-      const credential = PhoneAuthProvider.credential(verificationId, otpCode);
-      
-      if (auth.currentUser) {
-        try {
-          const linkUser = auth.currentUser;
-          await linkWithCredential(linkUser, credential);
-          console.log("Successfully linked phone to account during checkout!");
-        } catch (linkErr: any) {
-          console.warn("Link phone skipped or failed (might already be linked):", linkErr);
-        }
-      }
-      
-      // Save info and continue
-      localStorage.setItem("ghubor-checkout-info", JSON.stringify(formData));
-      setShowOtpModal(false);
-      router.push("/payment");
-    } catch (err: any) {
-      console.error(err);
-      let errorMsg = err.message || "Verification code validation failed.";
-      if (err.code === "auth/invalid-verification-code") {
-        errorMsg = "The verification code entered is invalid or has expired.";
-      }
-      setOtpError(errorMsg);
-    } finally {
-      setOtpLoading(false);
-    }
+    localStorage.setItem("ghubor-checkout-info", JSON.stringify(formData));
+    router.push("/payment");
   };
 
   return (
