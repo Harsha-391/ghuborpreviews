@@ -1,18 +1,11 @@
 "use client";
 
 import { useRef } from "react";
-import { useScroll } from "framer-motion";
+import { motion } from "framer-motion";
 import WordsPullUpMultiStyle from "./WordsPullUpMultiStyle";
-import AnimatedWord from "./AnimatedWord";
 
 export default function About() {
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Track scroll position of the About card container
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start 0.8", "end 0.2"],
-  });
 
   const headingSegments = [
     {
@@ -29,11 +22,9 @@ export default function About() {
     },
   ];
 
-  // Adapted body text based on Ghubor's brand guidelines
+  // Concise body text
   const bodyText =
-    "Every piece going forward carries three signatures so a Ghubor is recognizable across a crowded street: gothic blackletter typography, an oxblood or deep crimson palette, dense scripture-like body copy, a signature glyph, and a hand-numbered tag inside. Each piece is an artifact, a testament of struggle, faith, and transcendence. Built for the modern Gibbor. Designed to feel like armor, bound to become skin.";
-
-  const words = bodyText.split(" ");
+    "Ghubor makes wearable scripture for the silent battles nobody else sees. Each garment stands as a concrete testament of struggle, faith, and transcendence—meticulously engineered to feel like armor, constructed to become second skin.";
 
   return (
     <section
@@ -45,9 +36,26 @@ export default function About() {
         ref={containerRef}
         className="bg-bg-card rounded-3xl p-8 sm:p-12 md:p-16 max-w-6xl mx-auto border border-border-theme shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden"
       >
-        {/* Subtle Decorative Glows */}
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-red-950/10 rounded-full blur-[80px]" />
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-red-950/10 rounded-full blur-[80px]" />
+        {/* Crimson ink pool — top-left corner bleed */}
+        <div
+          className="absolute -top-40 -left-40 w-[340px] h-[300px] opacity-[0.20]"
+          style={{ background: "#C0392B", borderRadius: "73% 27% 63% 37% / 54% 47% 53% 46%", filter: "blur(85px)" }}
+        />
+        {/* Deep oxblood — bottom-right corner bleed */}
+        <div
+          className="absolute -bottom-40 -right-40 w-[380px] h-[320px] opacity-[0.15]"
+          style={{ background: "#5C0606", borderRadius: "38% 62% 46% 54% / 60% 35% 65% 40%", filter: "blur(95px)" }}
+        />
+        {/* Warm parchment bleed — mid-left */}
+        <div
+          className="absolute top-1/2 -left-24 -translate-y-1/2 w-[220px] h-[280px] opacity-[0.07]"
+          style={{ background: "#D4C5A9", borderRadius: "55% 45% 35% 65% / 48% 60% 40% 52%", filter: "blur(65px)" }}
+        />
+        {/* Small crimson scatter — top-right */}
+        <div
+          className="absolute top-[10%] right-[8%] w-[160px] h-[140px] opacity-[0.10]"
+          style={{ background: "#C0392B", borderRadius: "64% 36% 52% 48% / 45% 56% 44% 55%", filter: "blur(55px)" }}
+        />
 
         {/* Small Category Label */}
         <div className="text-center mb-6">
@@ -67,20 +75,18 @@ export default function About() {
         {/* Divider */}
         <div className="w-16 h-[1px] bg-primary/20 mx-auto mb-10" />
 
-        {/* Progressive Scroll Word Reveal */}
-        <div className="max-w-3xl mx-auto text-center leading-relaxed">
-          <p className="text-text-page/90 text-xs sm:text-sm md:text-base lg:text-lg font-light tracking-wide inline">
-            {words.map((word, index) => (
-              <AnimatedWord
-                key={index}
-                word={word}
-                index={index}
-                totalWords={words.length}
-                progress={scrollYProgress}
-              />
-            ))}
+        {/* Viewport Fade-in Paragraph */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-3xl mx-auto text-center leading-relaxed"
+        >
+          <p className="text-text-page/90 text-sm sm:text-base md:text-lg lg:text-xl font-light tracking-wide">
+            {bodyText}
           </p>
-        </div>
+        </motion.div>
 
         {/* Brand Foundation Emotional Pillars Summary Icons (Visual layout touch) */}
         <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mt-16 text-center border-t border-border-theme pt-8">

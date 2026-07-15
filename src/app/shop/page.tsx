@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowRight, Heart } from "lucide-react";
 import { products } from "../../data/products";
 import Navbar from "../../components/Navbar";
@@ -13,23 +14,37 @@ import { db } from "../../utils/firebase";
 import { useImageConfig } from "../../components/ImageConfigContext";
 import { trackPageView, trackSearch } from "../../utils/analytics";
 
-export default function ShopPage() {
+function ShopContent() {
   const ease = [0.16, 1, 0.3, 1] as const;
   const [displayProducts, setDisplayProducts] = useState(products);
+  const searchParams = useSearchParams();
+  const q = searchParams.get("q") || "";
 
   // Track page view
-  useEffect(() => { trackPageView("/shop"); }, []);
+  useEffect(() => {
+    trackPageView("/shop");
+    if (q) {
+      trackSearch(q);
+    }
+  }, [q]);
 
   useEffect(() => {
     const fetchDbProducts = async () => {
       try {
         if (!db) return;
-        const querySnapshot = await getDocs(collection(db, "products"));
+        const querySnapshot = await getDocs(collection(db, "cms-products"));
         if (!querySnapshot.empty) {
           const list: any[] = [];
           querySnapshot.forEach((doc) => {
-            list.push({ id: doc.id, ...doc.data() });
+            const data = doc.data();
+            list.push({
+              id: doc.id,
+              ...data,
+              image: data.darkImage || data.lightImage || "",
+              backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
+            });
           });
+          list.sort((a, b) => (a.order || 99) - (b.order || 99));
           setDisplayProducts(list);
         }
       } catch (err) {
@@ -38,6 +53,16 @@ export default function ShopPage() {
     };
     fetchDbProducts();
   }, []);
+
+  const filteredProducts = displayProducts.filter((product) => {
+    if (!q) return true;
+    const queryStr = q.toLowerCase();
+    return (
+      product.title.toLowerCase().includes(queryStr) ||
+      product.description.toLowerCase().includes(queryStr) ||
+      (product.category && product.category.toLowerCase().includes(queryStr))
+    );
+  });
 
   return (
     <div className="min-h-screen bg-bg-page text-text-page selection:bg-accent selection:text-primary relative overflow-x-hidden pb-24">
@@ -60,20 +85,46 @@ export default function ShopPage() {
           <h1 className="font-serif italic text-4xl sm:text-5xl lg:text-6xl text-text-page font-light tracking-wide mb-4">
             Sanctuary Offerings
           </h1>
+          {q && (
+            <p className="text-primary text-xs font-mono uppercase tracking-widest mb-4">
+              Showing results for &quot;{q}&quot; ({filteredProducts.length} artifacts found)
+            </p>
+          )}
           <p className="text-text-muted text-xs sm:text-sm font-light tracking-widest uppercase max-w-xl leading-relaxed">
             Every garment is an artifact, numbered by hand, representing physical scripture. Built for silent wars.
           </p>
         </div>
 
         {/* 2-Column Product Grid ("in the row of twos") */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
-          {displayProducts.map((product, idx) => (
-            <ShopProductCard key={product.id} product={product} idx={idx} ease={ease} />
-          ))}
-        </div>
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-24 border border-dashed border-border-theme rounded-3xl bg-bg-card/50">
+            <p className="text-sm font-mono text-text-muted uppercase tracking-widest">No matching artifacts found in the Sanctuary</p>
+            <Link href="/shop" className="text-xs font-mono text-primary uppercase tracking-widest hover:text-white transition-colors mt-4 inline-block">
+              View All Offerings
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
+            {filteredProducts.map((product, idx) => (
+              <ShopProductCard key={product.id} product={product} idx={idx} ease={ease} />
+            ))}
+          </div>
+        )}
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-bg-page flex items-center justify-center text-primary font-mono text-xs uppercase tracking-widest">
+        Loading Sanctuary Archives...
+      </div>
+    }>
+      <ShopContent />
+    </Suspense>
   );
 }
 
@@ -112,10 +163,10 @@ function ShopProductCard({ product, idx, ease }: { product: any; idx: number; ea
         {/* Micro indicators */}
         <div className="absolute top-6 left-6 z-20 flex items-center gap-2 bg-bg-page/70 backdrop-blur-md border border-border-theme rounded-full px-3 py-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-[#5C0606] animate-pulse" />
-          <span className="text-[9px] font-mono text-primary/80 uppercase tracking-widest">{product.drop}</span>
+          <span className="text-[9px] font-mono text-primary/80 uppercase tracking-widest">{product.drop || "DROP 01"}</span>
         </div>
         
-        {/* Limited tag moved left to avoid overlapping the heart button */}
+        {/* Limited tag */}
         <div className="absolute top-6 right-16 z-20 bg-bg-page/40 backdrop-blur-sm border border-border-theme rounded px-2.5 py-1">
           <span className="text-[9px] font-mono text-text-muted tracking-wider">LIMITED EDITION</span>
         </div>
@@ -130,7 +181,7 @@ function ShopProductCard({ product, idx, ease }: { product: any; idx: number; ea
         </button>
 
         <img
-          src={getImageUrl("product-" + product.id, product.image)}
+          src={getImageUrl("product-" + product.id, product.image) || undefined}
           alt={product.title}
           className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-95 group-hover:brightness-100"
         />
@@ -153,8 +204,13 @@ function ShopProductCard({ product, idx, ease }: { product: any; idx: number; ea
             <h2 className="text-lg sm:text-xl font-bold tracking-widest text-text-page group-hover:text-primary transition-colors uppercase">
               <Link href={`/shop/${product.id}`}>{product.title}</Link>
             </h2>
-            <span className="text-base sm:text-lg font-mono font-medium text-primary">
-              {product.price}
+            <span className="text-base sm:text-lg font-mono font-medium text-primary flex gap-2 items-center">
+              {product.mrp && (
+                <span className="line-through text-text-dim text-xs sm:text-sm font-normal">
+                  {product.mrp}
+                </span>
+              )}
+              <span>{product.price}</span>
             </span>
           </div>
 
@@ -168,12 +224,12 @@ function ShopProductCard({ product, idx, ease }: { product: any; idx: number; ea
           <div className="flex gap-4">
             <div className="text-left">
               <p className="text-[8px] text-text-dim font-mono uppercase tracking-widest">FABRIC</p>
-              <p className="text-[10px] text-primary/80 font-mono mt-0.5">{product.fabric}</p>
+              <p className="text-[10px] text-primary/80 font-mono mt-0.5">{product.fabric || "combed cotton"}</p>
             </div>
             <div className="h-6 w-[1px] bg-border-theme self-center" />
             <div className="text-left">
               <p className="text-[8px] text-text-dim font-mono uppercase tracking-widest">WEIGHT</p>
-              <p className="text-[10px] text-primary/80 font-mono mt-0.5">{product.weight}</p>
+              <p className="text-[10px] text-primary/80 font-mono mt-0.5">{product.weight || "heavyweight"}</p>
             </div>
           </div>
 

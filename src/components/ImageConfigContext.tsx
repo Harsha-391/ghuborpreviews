@@ -85,6 +85,26 @@ export const DEFAULT_IMAGE_CONFIGS: ImageConfigs = {
     darkUrl: "/images/products/tshirt.png",
     lightUrl: "/images/products/tshirt-light.png",
   },
+  "product-tshirt-back": {
+    label: "Scripture Fragment Tee Back Image",
+    darkUrl: "/images/products/tshirt-back.png",
+    lightUrl: "/images/products/tshirt-back-light.png",
+  },
+  "product-hoodie-back": {
+    label: "Sacred Shield Hoodie Back Image",
+    darkUrl: "/images/products/hoodie-back.png",
+    lightUrl: "/images/products/hoodie-back-light.png",
+  },
+  "product-jacket-back": {
+    label: "Silent Battle Field Jacket Back Image",
+    darkUrl: "/images/products/jacket-back.png",
+    lightUrl: "/images/products/jacket-back-light.png",
+  },
+  "product-longsleeve-back": {
+    label: "Modern Gibbor Mockneck Back Image",
+    darkUrl: "/images/products/longsleeve-back.png",
+    lightUrl: "/images/products/longsleeve-back-light.png",
+  },
   "product-cap": {
     label: "Faith Calligraphy Cap Image",
     darkUrl: "/images/products/cap.png",

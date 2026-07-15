@@ -24,6 +24,7 @@ export interface CMSProduct {
   id: string;
   title: string;
   price: string;
+  mrp?: string;
   description: string;
   fullDescription: string;
   fabric: string;
@@ -138,7 +139,7 @@ export function createEmptyProduct(): CMSProduct {
     fullDescription: "",
     fabric: "",
     weight: "",
-    drop: "DROP 02",
+    drop: "DROP 01",
     category: "",
     darkImage: "",
     lightImage: "",
@@ -328,3 +329,70 @@ function deleteLocalItem(key: string, id: string) {
   const list: any[] = s ? JSON.parse(s) : [];
   localStorage.setItem(key, JSON.stringify(list.filter((x) => x.id !== id)));
 }
+
+// ─── COUPONS ──────────────────────────────────────────────────────────────────
+
+export interface CMSCoupon {
+  id: string;
+  code: string;
+  type: "percentage" | "fixed";
+  value: number;
+  minAmount: number;
+  active: boolean;
+  createdAt: number;
+}
+
+export async function fetchCoupons(): Promise<CMSCoupon[]> {
+  if (!db) return getLocalCoupons();
+  try {
+    const q = query(collection(db, "cms-coupons"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() } as CMSCoupon));
+    setLocalCoupons(items);
+    return items;
+  } catch (err) {
+    console.warn("fetchCoupons: Firestore failed, using local.", err);
+    return getLocalCoupons();
+  }
+}
+
+export async function saveCoupon(coupon: CMSCoupon): Promise<void> {
+  if (!db) {
+    upsertLocalItem("ghubor-cms-coupons", coupon);
+    return;
+  }
+  try {
+    const ref = doc(db, "cms-coupons", coupon.id);
+    await setDoc(ref, coupon);
+    upsertLocalItem("ghubor-cms-coupons", coupon);
+  } catch (err) {
+    console.error("saveCoupon failed:", err);
+    upsertLocalItem("ghubor-cms-coupons", coupon);
+  }
+}
+
+export async function deleteCoupon(id: string): Promise<void> {
+  if (!db) {
+    deleteLocalItem("ghubor-cms-coupons", id);
+    return;
+  }
+  try {
+    await deleteDoc(doc(db, "cms-coupons", id));
+    deleteLocalItem("ghubor-cms-coupons", id);
+  } catch (err) {
+    console.error("deleteCoupon failed:", err);
+    deleteLocalItem("ghubor-cms-coupons", id);
+  }
+}
+
+function getLocalCoupons(): CMSCoupon[] {
+  if (typeof window === "undefined") return [];
+  const s = localStorage.getItem("ghubor-cms-coupons");
+  return s ? JSON.parse(s) : [];
+}
+
+function setLocalCoupons(items: CMSCoupon[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("ghubor-cms-coupons", JSON.stringify(items));
+}
+

@@ -7,6 +7,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   User as FirebaseUser,
+  signInWithPopup,
+  GoogleAuthProvider,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../utils/firebase";
@@ -27,6 +29,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, pass: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (email: string, pass: string, name: string, phone: string) => Promise<void>;
   logOut: () => Promise<void>;
   updateProfileData: (data: Partial<UserProfile>) => Promise<void>;
@@ -80,6 +83,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, pass);
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    if (!auth || !db) {
+      throw new Error("Sanctuary database keys are not configured yet in .env.local.");
+    }
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+      
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (!docSnap.exists()) {
+        const newProfile: UserProfile = {
+          uid: user.uid,
+          name: user.displayName || "Warrior",
+          email: user.email || "",
+          phone: "", // Keep empty
+          createdAt: new Date().toISOString(),
+        };
+        await setDoc(docRef, newProfile);
+        setProfile(newProfile);
+      } else {
+        setProfile(docSnap.data() as UserProfile);
+      }
     } catch (err) {
       setLoading(false);
       throw err;
@@ -147,6 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         loading,
         signIn,
+        signInWithGoogle,
         signUp,
         logOut,
         updateProfileData,

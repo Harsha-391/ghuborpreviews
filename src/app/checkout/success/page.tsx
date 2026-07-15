@@ -26,20 +26,20 @@ export default function CheckoutSuccessPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#070202] text-[#E1E0CC] selection:bg-red-950 selection:text-primary relative overflow-x-hidden pb-24">
+    <div className="min-h-screen bg-bg-page text-text-page selection:bg-accent selection:text-primary relative overflow-x-hidden pb-24">
       {/* Background Noise and glows */}
       <div className="bg-noise absolute inset-0 opacity-[0.08] pointer-events-none z-0" />
-      <div className="absolute top-[20%] left-[-10%] w-[400px] h-[400px] bg-red-950/15 rounded-full blur-[140px] pointer-events-none z-0" />
+      <div className="absolute top-[20%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[140px] pointer-events-none z-0" />
 
       {/* Global Navbar */}
       <Navbar absolute={false} />
 
       <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 flex flex-col items-center">
         
-        <div className="max-w-xl text-center bg-black/60 border border-white/5 rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden">
+        <div className="max-w-xl text-center bg-bg-card border border-border-theme rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden">
           {/* Subtle Decorative Glows */}
-          <div className="absolute -top-12 -left-12 w-24 h-24 bg-red-950/10 rounded-full blur-xl" />
-          <div className="absolute -bottom-12 -right-12 w-24 h-24 bg-red-950/10 rounded-full blur-xl" />
+          <div className="absolute -top-12 -left-12 w-24 h-24 bg-primary/5 rounded-full blur-xl" />
+          <div className="absolute -bottom-12 -right-12 w-24 h-24 bg-primary/5 rounded-full blur-xl" />
 
           {/* Success Check Icon */}
           <motion.div
@@ -55,25 +55,25 @@ export default function CheckoutSuccessPage() {
             AUTHENTICATION SECURED
           </span>
           
-          <h1 className="font-serif italic text-3xl sm:text-4xl text-[#E1E0CC] font-light tracking-wide leading-none mb-6">
+          <h1 className="font-serif italic text-3xl sm:text-4xl text-text-page font-light tracking-wide leading-none mb-6">
             Replica Registered.
           </h1>
 
           {/* Order Tag Badge */}
-          <div className="inline-flex items-center gap-2 border border-white/10 rounded-lg p-3 bg-[#080808]/80 backdrop-blur shadow-xl mb-8">
+          <div className="inline-flex items-center gap-2 border border-border-theme rounded-lg p-3 bg-bg-page/80 backdrop-blur shadow-xl mb-8">
             <div className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse" />
-            <span className="text-[11px] text-gray-500 font-mono uppercase tracking-widest">ORDER IDENTIFICATION:</span>
+            <span className="text-[11px] text-text-muted font-mono uppercase tracking-widest">ORDER IDENTIFICATION:</span>
             <span className="text-xs text-primary font-mono font-medium">{orderNo}</span>
           </div>
 
-          <p className="text-xs sm:text-sm text-gray-400 font-light leading-relaxed mb-8 max-w-md mx-auto">
-            Your garment selection has been recorded within the archives of **Drop 02** and is being prepared in the dark. An email notification ritual containing sizing specifications and transaction details has been sent to your address.
+          <p className="text-xs sm:text-sm text-text-muted font-light leading-relaxed mb-8 max-w-md mx-auto">
+            Your garment selection has been recorded within the archives of **Drop 01** and is being prepared in the dark. An email notification ritual containing sizing specifications and transaction details has been sent to your address.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               href="/shop"
-              className="w-full sm:w-auto bg-primary hover:bg-[#D4D0BC] text-black font-mono font-medium text-xs tracking-widest py-3.5 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase shadow-md shadow-primary/10"
+              className="w-full sm:w-auto bg-primary hover:bg-primary/95 text-bg-page font-mono font-medium text-xs tracking-widest py-3.5 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase shadow-md shadow-primary/10"
             >
               <span>RETURN TO ARCHIVES</span>
               <ArrowRight className="w-4 h-4" />
@@ -81,14 +81,14 @@ export default function CheckoutSuccessPage() {
 
             <Link
               href="/"
-              className="w-full sm:w-auto bg-transparent hover:bg-white/5 border border-white/10 hover:border-white/20 text-white font-mono text-xs tracking-widest py-3.5 px-6 rounded-full transition-all duration-300 flex items-center justify-center cursor-pointer uppercase"
+              className="w-full sm:w-auto bg-transparent hover:bg-bg-card-alt border border-border-theme text-text-page font-mono text-xs tracking-widest py-3.5 px-6 rounded-full transition-all duration-300 flex items-center justify-center cursor-pointer uppercase"
             >
               <span>GO TO HOME</span>
             </Link>
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-[9px] text-gray-600 font-mono uppercase border-t border-white/5 pt-6 mt-8">
-            <ShieldCheck className="w-4 h-4 text-[#5C0606]" />
+          <div className="flex items-center justify-center gap-2 text-[9px] text-text-dim font-mono uppercase border-t border-border-theme pt-6 mt-8">
+            <ShieldCheck className="w-4 h-4 text-primary" />
             <span>TRANSACTION RECORD COMPLETE</span>
           </div>
         </div>

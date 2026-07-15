@@ -13,6 +13,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../utils/firebase";
 import { useImageConfig } from "../../../components/ImageConfigContext";
 import { trackPageView, trackProductView } from "../../../utils/analytics";
+import WaxSeal from "../../../components/WaxSeal";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -44,10 +45,16 @@ export default function ProductDetailPage() {
     const fetchDbProduct = async () => {
       try {
         if (!db) return;
-        const docRef = doc(db, "products", id);
+        const docRef = doc(db, "cms-products", id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setProduct({ id: docSnap.id, ...docSnap.data() } as Product);
+          const data = docSnap.data();
+          setProduct({
+            id: docSnap.id,
+            ...data,
+            image: data.darkImage || data.lightImage || "",
+            backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
+          } as Product);
         }
       } catch (err) {
         console.warn("Firestore product document query failed, using local product:", err);
@@ -104,10 +111,33 @@ export default function ProductDetailPage() {
     );
   }
 
+  // Safe Fallbacks for Custom CMS Products
+  const sizeScale = product.sizeScale || [
+    { size: "S", chest: "48 inches", length: "27 inches", sleeve: "24.5 inches" },
+    { size: "M", chest: "50 inches", length: "28 inches", sleeve: "25 inches" },
+    { size: "L", chest: "52 inches", length: "29 inches", sleeve: "25.5 inches" },
+    { size: "XL", chest: "54 inches", length: "30 inches", sleeve: "26 inches" }
+  ];
+  const details = product.details || [
+    "480GSM Heavyweight Streetwear Build",
+    "Signature blackletter embroidery details",
+    "Hand-numbered authentic drop tag (Strictly Limited)",
+    "Ribbed accents and drop shoulder silhouette",
+    "Made in India, finished in the sanctuary"
+  ];
+  const howToUse = product.howToUse || [
+    "Wear as a protective outer shield during silent battles.",
+    "Pair with washed obsidian denim or Sanctuary cargo pants.",
+    "Dry clean or wash cold inside out to protect thread integrity."
+  ];
+
   // Dynamic values resolved using ImageConfigContext
   const currentProductImage = getImageUrl("product-" + product.id, product.image);
+  const currentProductBackImage = product.backImage ? getImageUrl("product-" + product.id + "-back", product.backImage) : undefined;
+
   const galleryImages = [
-    { label: "Full View", url: currentProductImage },
+    { label: "Front View", url: currentProductImage },
+    ...(currentProductBackImage ? [{ label: "Back View", url: currentProductBackImage }] : []),
     { label: "The Glyph", url: getImageUrl("glyph") },
     { label: "Woven Tag", url: getImageUrl("tag") },
     { label: "Scripture", url: getImageUrl("scripture") },
@@ -137,8 +167,15 @@ export default function ProductDetailPage() {
             <div className="flex-grow aspect-[4/5] bg-bg-page/40 border border-border-theme rounded-3xl overflow-hidden relative">
               {/* Subtle Drop Badge */}
               <div className="absolute top-6 left-6 z-20 flex items-center gap-1.5 bg-bg-page/70 backdrop-blur-md border border-border-theme rounded-full px-3 py-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#5C0606]" />
-                <span className="text-[9px] font-mono text-primary/80 uppercase tracking-widest">{product.drop}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <span className="text-[9px] font-mono text-primary/80 uppercase tracking-widest">{product.drop || "DROP 01"}</span>
+              </div>
+
+              {/* View Label Overlay */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-bg-page/80 backdrop-blur-md border border-border-theme rounded-full px-4 py-1.5 shadow-lg">
+                <span className="text-[9px] font-mono text-primary uppercase tracking-[0.2em] font-semibold">
+                  {galleryImages[activeIndex]?.label}
+                </span>
               </div>
 
               <motion.img
@@ -146,7 +183,7 @@ export default function ProductDetailPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
-                src={activeImage}
+                src={activeImage || undefined}
                 alt={product.title}
                 className="w-full h-full object-cover object-center"
               />
@@ -165,7 +202,7 @@ export default function ProductDetailPage() {
                   }`}
                 >
                   <img
-                    src={imgItem.url}
+                    src={imgItem.url || undefined}
                     alt={imgItem.label}
                     className="w-full h-full object-cover"
                   />
@@ -176,15 +213,20 @@ export default function ProductDetailPage() {
           </div>
 
           {/* RIGHT: Product Details & Options Section (Cols 8-12) */}
-          <div className="lg:col-span-5 flex flex-col gap-8 bg-bg-nav border border-border-theme rounded-3xl p-6 sm:p-8">
+          <div className="lg:col-span-5 flex flex-col gap-8 bg-bg-nav border border-border-theme rounded-3xl p-6 sm:p-8 relative">
             
+            {/* Absolute Stamped Wax Seal */}
+            <div className="absolute top-[-25px] right-[-15px] z-30 pointer-events-none hidden sm:block">
+              <WaxSeal size={65} />
+            </div>
+
             {/* Title, Badge & Price */}
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 pr-12">
                 <span className="text-[9px] font-mono text-text-muted tracking-wider bg-bg-page border border-border-theme rounded px-2 py-0.5 uppercase">
                   HAND-NUMBERED
                 </span>
-                <span className="text-[9px] font-mono text-primary/80 tracking-wider bg-[#5C0606]/20 border border-[#5C0606]/40 rounded px-2 py-0.5 uppercase">
+                <span className="text-[9px] font-mono text-primary/80 tracking-wider bg-bg-page border border-border-theme rounded px-2 py-0.5 uppercase">
                   LIMITED DROP (64 PCS)
                 </span>
               </div>
@@ -194,14 +236,21 @@ export default function ProductDetailPage() {
                 </h1>
                 <button
                   onClick={handleHeartClick}
-                  className="p-3 rounded-full bg-bg-page/70 hover:bg-bg-page/90 border border-border-theme text-primary/80 hover:text-white transition-all cursor-pointer shadow-lg shrink-0"
+                  className="p-3 rounded-full bg-bg-page/70 hover:bg-bg-page/90 border border-border-theme text-primary/80 hover:text-white transition-all cursor-pointer shadow-lg shrink-0 bg-transparent border-none outline-none"
                   aria-label="Add to Wishlist"
                 >
                   <Heart className={`w-4 h-4 transition-colors ${wishlisted ? "fill-red-600 text-red-600 border-none" : "text-primary/70"}`} />
                 </button>
               </div>
               <div className="text-xl sm:text-2xl font-mono text-primary font-semibold mt-4">
-                {product.price}
+                <div className="flex gap-3 items-baseline">
+                  {product.mrp && (
+                    <span className="line-through text-text-dim text-sm sm:text-base font-normal">
+                      {product.mrp}
+                    </span>
+                  )}
+                  <span>{product.price}</span>
+                </div>
                 <span className="text-[10px] text-text-muted font-light tracking-wide block mt-1 uppercase font-sans">
                   Duties & taxes included. Shipping computed at ritual checkout.
                 </span>
@@ -211,7 +260,7 @@ export default function ProductDetailPage() {
             {/* Quick Summary */}
             <div className="border-t border-b border-border-theme py-4">
               <p className="text-xs sm:text-sm text-text-muted font-light leading-relaxed">
-                {product.fullDescription}
+                {product.fullDescription || product.description}
               </p>
             </div>
 
@@ -223,14 +272,14 @@ export default function ProductDetailPage() {
                 </label>
                 <button
                   onClick={() => setActiveTab("sizing")}
-                  className="text-[10px] text-primary/75 hover:text-primary uppercase tracking-widest border-b border-primary/20 hover:border-primary pb-0.5 transition-colors cursor-pointer"
+                  className="text-[10px] text-primary/75 hover:text-primary uppercase tracking-widest border-b border-primary/20 hover:border-primary pb-0.5 transition-colors cursor-pointer bg-transparent border-none outline-none"
                 >
                   SIZING SPECIFICATIONS
                 </button>
               </div>
 
               <div className="flex gap-2">
-                {product.sizeScale.map((m) => (
+                {sizeScale.map((m) => (
                   <button
                     key={m.size}
                     onClick={() => {
@@ -254,24 +303,24 @@ export default function ProductDetailPage() {
                   <CornerDownRight className="w-3.5 h-3.5 text-primary/60 shrink-0" />
                   <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">
                     {selectedSize} Specs:{" "}
-                    {product.sizeScale.find((s) => s.size === selectedSize)?.chest && (
+                    {sizeScale.find((s) => s.size === selectedSize)?.chest && (
                       <span className="text-primary">
-                        Chest: {product.sizeScale.find((s) => s.size === selectedSize)?.chest}
+                        Chest: {sizeScale.find((s) => s.size === selectedSize)?.chest}
                       </span>
                     )}
-                    {product.sizeScale.find((s) => s.size === selectedSize)?.length && (
+                    {sizeScale.find((s) => s.size === selectedSize)?.length && (
                       <span className="text-primary ml-2">
-                        Length: {product.sizeScale.find((s) => s.size === selectedSize)?.length}
+                        Length: {sizeScale.find((s) => s.size === selectedSize)?.length}
                       </span>
                     )}
-                    {product.sizeScale.find((s) => s.size === selectedSize)?.sleeve && (
+                    {sizeScale.find((s) => s.size === selectedSize)?.sleeve && (
                       <span className="text-primary ml-2">
-                        Sleeve: {product.sizeScale.find((s) => s.size === selectedSize)?.sleeve}
+                        Sleeve: {sizeScale.find((s) => s.size === selectedSize)?.sleeve}
                       </span>
                     )}
-                    {product.sizeScale.find((s) => s.size === selectedSize)?.waist && (
+                    {sizeScale.find((s) => s.size === selectedSize)?.waist && (
                       <span className="text-primary ml-2">
-                        Waist: {product.sizeScale.find((s) => s.size === selectedSize)?.waist}
+                        Waist: {sizeScale.find((s) => s.size === selectedSize)?.waist}
                       </span>
                     )}
                   </span>
@@ -297,7 +346,7 @@ export default function ProductDetailPage() {
 
               <button
                 onClick={handleBuyNow}
-                className="w-full bg-transparent hover:bg-bg-card-alt border border-primary/45 hover:border-primary text-primary font-mono text-xs tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center cursor-pointer uppercase font-semibold"
+                className="w-full bg-transparent hover:bg-bg-card-alt border border-primary/45 hover:border-primary text-primary font-mono text-xs tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center cursor-pointer uppercase font-semibold bg-transparent"
               >
                 ORDER DIRECTLY (BUY NOW)
               </button>
@@ -306,54 +355,52 @@ export default function ProductDetailPage() {
             {/* Guarantees panel */}
             <div className="grid grid-cols-3 gap-2 border-t border-border-theme pt-6 text-center">
               <div className="flex flex-col items-center gap-1.5">
-                <Shield className="w-4 h-4 text-[#5C0606]" />
-                <span className="text-[8px] text-text-dim uppercase tracking-wider font-mono">100% Verified</span>
+                <Shield className="w-4 h-4 text-primary/75" />
+                <span className="text-[8px] font-mono text-text-muted uppercase tracking-wider leading-relaxed">Protected<br/>Shipment</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5 border-l border-r border-border-theme">
+                <Truck className="w-4 h-4 text-primary/75" />
+                <span className="text-[8px] font-mono text-text-muted uppercase tracking-wider leading-relaxed">Sanctuary<br/>Logistics</span>
               </div>
               <div className="flex flex-col items-center gap-1.5">
-                <Truck className="w-4 h-4 text-[#5C0606]" />
-                <span className="text-[8px] text-text-dim uppercase tracking-wider font-mono">Secure Shipping</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <RefreshCw className="w-4 h-4 text-[#5C0606]" />
-                <span className="text-[8px] text-text-dim uppercase tracking-wider font-mono">Limited Edition</span>
+                <RefreshCw className="w-4 h-4 text-primary/75" />
+                <span className="text-[8px] font-mono text-text-muted uppercase tracking-wider leading-relaxed">Secured<br/>Returns</span>
               </div>
             </div>
 
           </div>
         </div>
 
-        {/* BOTTOM: Tabs Section for scripture description, size chart, care (Cols 1-12) */}
-        <div className="mt-16 border-t border-border-theme pt-12">
-          {/* Tab selectors */}
-          <div className="flex justify-center sm:justify-start gap-8 border-b border-border-theme pb-4 mb-8">
+        {/* Tab Interface Section (Details, Ritual, Sizing) */}
+        <div className="mt-16 bg-bg-nav border border-border-theme rounded-3xl p-6 sm:p-10">
+          {/* Tab buttons */}
+          <div className="flex border-b border-border-theme mb-8 font-mono text-[10px] uppercase tracking-widest overflow-x-auto">
             <button
               onClick={() => setActiveTab("details")}
-              className={`text-xs font-mono tracking-widest uppercase pb-2 transition-all relative cursor-pointer ${
-                activeTab === "details" ? "text-primary font-semibold" : "text-text-muted hover:text-text-page"
+              className={`py-4 px-6 relative shrink-0 transition-colors cursor-pointer bg-transparent border-none outline-none ${
+                activeTab === "details" ? "text-primary font-semibold" : "text-text-muted hover:text-primary"
               }`}
             >
-              Specifications & Material
+              Material Specs
               {activeTab === "details" && (
                 <motion.div layoutId="activeTabBorder" className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary" />
               )}
             </button>
-
             <button
               onClick={() => setActiveTab("ritual")}
-              className={`text-xs font-mono tracking-widest uppercase pb-2 transition-all relative cursor-pointer ${
-                activeTab === "ritual" ? "text-primary font-semibold" : "text-text-muted hover:text-text-page"
+              className={`py-4 px-6 relative shrink-0 transition-colors cursor-pointer bg-transparent border-none outline-none ${
+                activeTab === "ritual" ? "text-primary font-semibold" : "text-text-muted hover:text-primary"
               }`}
             >
-              How to wear / Ritual
+              The Ritual Guide
               {activeTab === "ritual" && (
                 <motion.div layoutId="activeTabBorder" className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary" />
               )}
             </button>
-
             <button
               onClick={() => setActiveTab("sizing")}
-              className={`text-xs font-mono tracking-widest uppercase pb-2 transition-all relative cursor-pointer ${
-                activeTab === "sizing" ? "text-primary font-semibold" : "text-text-muted hover:text-text-page"
+              className={`py-4 px-6 relative shrink-0 transition-colors cursor-pointer bg-transparent border-none outline-none ${
+                activeTab === "sizing" ? "text-primary font-semibold" : "text-text-muted hover:text-primary"
               }`}
             >
               Size Scale Guide
@@ -378,20 +425,20 @@ export default function ProductDetailPage() {
                   <div className="flex flex-col gap-4">
                     <h3 className="font-serif italic text-lg sm:text-xl text-primary font-light">Structure & Materiality</h3>
                     <p className="text-xs sm:text-sm text-text-muted font-light leading-relaxed">
-                      Every piece is woven utilizing heavy construction techniques. The thread tension is tailored to maximize drape weight, preventing fabric deformation over long-term wear. All seams are double-reinforced with heavy cotton threat.
+                      Every piece is woven utilizing heavy construction techniques. The thread tension is tailored to maximize drape weight, preventing fabric deformation over long-term wear. All seams are double-reinforced with heavy cotton thread.
                     </p>
                     <div className="flex flex-col gap-2 font-mono text-xs pt-2">
                       <div className="flex justify-between border-b border-border-theme pb-1">
                         <span className="text-text-dim uppercase">Fabric Composition:</span>
-                        <span className="text-text-page">{product.fabric}</span>
+                        <span className="text-text-page">{product.fabric || "combed cotton"}</span>
                       </div>
                       <div className="flex justify-between border-b border-border-theme pb-1">
                         <span className="text-text-dim uppercase">Weight Category:</span>
-                        <span className="text-text-page">{product.weight}</span>
+                        <span className="text-text-page">{product.weight || "heavyweight"}</span>
                       </div>
                       <div className="flex justify-between border-b border-border-theme pb-1">
                         <span className="text-text-dim uppercase">Trace Number:</span>
-                        <span className="text-primary">DROP 02 / EXCLUSIVE_RUN_064</span>
+                        <span className="text-primary">{product.drop || "DROP 01"} / EXCLUSIVE_RUN_064</span>
                       </div>
                     </div>
                   </div>
@@ -399,9 +446,9 @@ export default function ProductDetailPage() {
                   <div className="bg-bg-card border border-border-theme rounded-2xl p-6 flex flex-col justify-center">
                     <h4 className="text-[10px] text-text-dim uppercase tracking-widest font-mono mb-4">Woven Inscriptions</h4>
                     <ul className="space-y-3">
-                      {product.details.map((detail, index) => (
+                      {details.map((detail, index) => (
                         <li key={index} className="flex gap-3 items-start text-xs font-light text-text-muted">
-                          <Check className="w-3.5 h-3.5 text-[#5C0606] shrink-0 mt-0.5" />
+                          <Check className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                           <span>{detail}</span>
                         </li>
                       ))}
@@ -425,9 +472,9 @@ export default function ProductDetailPage() {
                   </p>
                   
                   <div className="space-y-4">
-                    {product.howToUse.map((ritual, idx) => (
+                    {howToUse.map((ritual, idx) => (
                       <div key={idx} className="flex gap-4 items-start bg-bg-card border border-border-theme rounded-xl p-4">
-                        <span className="w-6 h-6 rounded-full bg-[#5C0606]/10 border border-[#5C0606]/30 flex items-center justify-center font-mono text-[10px] text-primary shrink-0">
+                        <span className="w-6 h-6 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center font-mono text-[10px] text-primary shrink-0">
                           {idx + 1}
                         </span>
                         <p className="text-xs sm:text-sm text-text-page font-light leading-relaxed">
@@ -459,19 +506,19 @@ export default function ProductDetailPage() {
                       <thead>
                         <tr className="bg-bg-page/60 border-b border-border-theme text-text-dim">
                           <th className="p-4 uppercase tracking-wider font-light">Size Option</th>
-                          {product.sizeScale[0]?.chest && <th className="p-4 uppercase tracking-wider font-light">Chest Width</th>}
-                          {product.sizeScale[0]?.length && <th className="p-4 uppercase tracking-wider font-light">Garment Length</th>}
-                          {product.sizeScale[0]?.sleeve && <th className="p-4 uppercase tracking-wider font-light">Sleeve Length</th>}
-                          {product.sizeScale[0]?.waist && <th className="p-4 uppercase tracking-wider font-light">Waist Circumference</th>}
-                          {product.sizeScale[0]?.inseam && <th className="p-4 uppercase tracking-wider font-light">Inseam Length</th>}
+                          {sizeScale[0]?.chest && <th className="p-4 uppercase tracking-wider font-light">Chest Width</th>}
+                          {sizeScale[0]?.length && <th className="p-4 uppercase tracking-wider font-light">Garment Length</th>}
+                          {sizeScale[0]?.sleeve && <th className="p-4 uppercase tracking-wider font-light">Sleeve Length</th>}
+                          {sizeScale[0]?.waist && <th className="p-4 uppercase tracking-wider font-light">Waist Circumference</th>}
+                          {sizeScale[0]?.inseam && <th className="p-4 uppercase tracking-wider font-light">Inseam Length</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border-theme">
-                        {product.sizeScale.map((row) => (
+                        {sizeScale.map((row) => (
                           <tr
                             key={row.size}
                             className={`transition-colors hover:bg-bg-card-alt ${
-                              selectedSize === row.size ? "bg-[#5C0606]/10 text-primary font-semibold" : "text-text-muted"
+                              selectedSize === row.size ? "bg-primary/10 text-primary font-semibold" : "text-text-muted"
                             }`}
                           >
                             <td className="p-4 flex items-center gap-2">

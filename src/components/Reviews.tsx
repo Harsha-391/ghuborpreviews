@@ -85,7 +85,26 @@ export default function Reviews() {
     <section id="reviews" className="bg-bg-page py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden select-none border-t border-border-theme">
       {/* Background Noise and Subtle Red Glow */}
       <div className="bg-noise absolute inset-0 opacity-[0.08] pointer-events-none z-0" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-red-950/10 rounded-full blur-[140px] pointer-events-none z-0" />
+      {/* Top-right ink corner — crimson */}
+      <div
+        className="absolute -top-24 -right-24 w-[380px] h-[340px] opacity-[0.08] pointer-events-none z-0"
+        style={{ background: "#C0392B", borderRadius: "20% 80% 40% 60% / 30% 70% 50% 50%", filter: "blur(90px)" }}
+      />
+      {/* Bottom-left warm parchment bleed */}
+      <div
+        className="absolute -bottom-24 -left-24 w-[420px] h-[300px] opacity-[0.05] pointer-events-none z-0"
+        style={{ background: "#D4C5A9", borderRadius: "60% 40% 20% 80% / 50% 30% 70% 50%", filter: "blur(100px)" }}
+      />
+      {/* Mid scatter — deep oxblood drop */}
+      <div
+        className="absolute top-[45%] left-[28%] w-[220px] h-[200px] opacity-[0.05] pointer-events-none z-0"
+        style={{ background: "#5C0606", borderRadius: "64% 36% 52% 48% / 45% 56% 44% 55%", filter: "blur(75px)" }}
+      />
+      {/* Small bottom-right drop */}
+      <div
+        className="absolute bottom-[10%] right-[15%] w-[160px] h-[160px] opacity-[0.07] pointer-events-none z-0"
+        style={{ background: "#C0392B", borderRadius: "55% 45% 70% 30% / 45% 55% 45% 55%", filter: "blur(55px)" }}
+      />
 
       <div className="max-w-7xl mx-auto relative z-10">
         

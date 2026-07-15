@@ -9,7 +9,38 @@ export default function ProductLineup() {
   const ease = [0.16, 1, 0.3, 1] as const;
 
   // Show only 6 products (we have exactly 6 in our data source)
-  const lineupProducts = products.slice(0, 6);
+  const [lineupProducts, setLineupProducts] = useState(products.slice(0, 6));
+
+  useEffect(() => {
+    const fetchDbProducts = async () => {
+      try {
+        const { db } = await import("../utils/firebase");
+        const { collection, getDocs } = await import("firebase/firestore");
+        if (!db) return;
+        const querySnapshot = await getDocs(collection(db, "cms-products"));
+        if (!querySnapshot.empty) {
+          const list: any[] = [];
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            list.push({
+              id: doc.id,
+              ...data,
+              image: data.darkImage || data.lightImage || "",
+              backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
+            });
+          });
+          list.sort((a, b) => (a.order || 99) - (b.order || 99));
+          const activeList = list.filter(p => p.published !== false).slice(0, 6);
+          if (activeList.length > 0) {
+            setLineupProducts(activeList);
+          }
+        }
+      } catch (err) {
+        console.warn("ProductLineup: Firestore load failed:", err);
+      }
+    };
+    fetchDbProducts();
+  }, []);
 
   return (
     <section
@@ -17,7 +48,8 @@ export default function ProductLineup() {
       className="bg-bg-page py-24 border-t border-border-theme relative overflow-hidden select-none"
     >
       {/* Dynamic Keyframes injected locally */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes productsMarquee {
           0% {
             transform: translate3d(0, 0, 0);
@@ -57,7 +89,7 @@ export default function ProductLineup() {
             THE CURRENT DROP
           </span>
           <h2 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-text-page font-light tracking-wide leading-none">
-            Drop 02: Wearable Scripture
+            Drop 01: Wearable Scripture
           </h2>
           <div className="w-12 h-[1px] bg-primary/20 mx-auto mt-6" />
         </div>
@@ -141,14 +173,14 @@ function ProductCard({ product }: { product: any }) {
         </button>
 
         <img
-          src={getImageUrl("product-" + product.id, product.image)}
+          src={getImageUrl("product-" + product.id, product.image) || undefined}
           alt={product.title}
           loading="lazy"
           className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-95 group-hover:brightness-100"
         />
 
         <div className="absolute inset-0 bg-gradient-to-t from-bg-page via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
-        
+
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <span className="bg-primary text-bg-page font-mono text-xs px-5 py-2.5 rounded-full font-medium tracking-widest shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
             EXAMINE ARTIFACT
@@ -167,7 +199,7 @@ function ProductCard({ product }: { product: any }) {
               {product.price}
             </span>
           </div>
-          
+
           <p className="text-[11px] text-text-muted font-light leading-relaxed mb-4 line-clamp-2 group-hover:text-gray-400 transition-colors">
             {product.description}
           </p>
@@ -177,7 +209,7 @@ function ProductCard({ product }: { product: any }) {
           <span className="text-[9px] text-text-dim uppercase font-mono tracking-wider">
             {product.weight}
           </span>
-          
+
           <Link
             href={`/shop/${product.id}`}
             className="inline-flex items-center gap-1 text-[10px] font-light text-primary hover:text-white transition-colors uppercase tracking-widest"

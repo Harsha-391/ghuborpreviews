@@ -43,9 +43,9 @@ export default function MainLayout() {
 
       {/* Sections */}
       <Hero loading={loading} />
+      <ProductLineup />
       <About />
       <Features />
-      <ProductLineup />
       <Reviews />
 
       <Footer />

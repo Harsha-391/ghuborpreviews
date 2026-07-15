@@ -9,6 +9,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { products, Product } from "../../data/products";
 import { getCart, removeFromCart, updateCartQty } from "../../utils/store";
+import WaxSeal from "../../components/WaxSeal";
 
 interface DisplayCartItem {
   product: Product;
@@ -66,10 +67,10 @@ export default function CartPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070202] text-[#E1E0CC] selection:bg-red-950 selection:text-primary relative overflow-x-hidden pb-24">
+    <div className="min-h-screen bg-bg-page text-text-page selection:bg-accent selection:text-primary relative overflow-x-hidden pb-24">
       {/* Background Noise and glows */}
       <div className="bg-noise absolute inset-0 opacity-[0.08] pointer-events-none z-0" />
-      <div className="absolute top-[20%] left-[-10%] w-[400px] h-[400px] bg-red-950/15 rounded-full blur-[140px] pointer-events-none z-0" />
+      <div className="absolute top-[20%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[140px] pointer-events-none z-0" />
 
       {/* Global Navbar */}
       <Navbar absolute={false} />
@@ -77,10 +78,10 @@ export default function CartPage() {
       <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
         {/* Header */}
         <div className="text-center mb-16">
-          <span className="text-primary text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase block mb-3">
+          <span className="text-primary text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase block mb-3 animate-pulse">
             THE ARCHIVES
           </span>
-          <h1 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-[#E1E0CC] font-light tracking-wide leading-none">
+          <h1 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-text-page font-light tracking-wide leading-none">
             Acquired Artifacts
           </h1>
           <div className="w-12 h-[1px] bg-primary/20 mx-auto mt-6" />
@@ -96,12 +97,12 @@ export default function CartPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: idx * 0.1, ease }}
-                  className="flex gap-4 sm:gap-6 bg-black/60 border border-white/5 rounded-2xl p-4 sm:p-6 hover:border-primary/20 transition-all duration-300"
+                  className="flex gap-4 sm:gap-6 bg-bg-card border border-border-theme rounded-2xl p-4 sm:p-6 hover:border-primary/20 transition-all duration-300 shadow-sm"
                 >
                   {/* Image */}
                   <Link
                     href={`/shop/${item.product.id}`}
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-black/40 border border-white/5 shrink-0"
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-bg-page/40 border border-border-theme shrink-0"
                   >
                     <img
                       src={item.product.image}
@@ -114,7 +115,7 @@ export default function CartPage() {
                   <div className="flex-grow flex flex-col justify-between">
                     <div>
                       <div className="flex justify-between items-start gap-4">
-                        <h3 className="text-xs sm:text-sm font-semibold tracking-widest text-[#E1E0CC] uppercase">
+                        <h3 className="text-xs sm:text-sm font-semibold tracking-widest text-text-page uppercase hover:text-primary transition-colors">
                           <Link href={`/shop/${item.product.id}`}>{item.product.title}</Link>
                         </h3>
                         <span className="text-xs sm:text-sm font-mono font-medium text-primary">
@@ -124,21 +125,21 @@ export default function CartPage() {
 
                       {/* Sizing & details */}
                       <div className="flex items-center gap-6 mt-1">
-                        <span className="font-mono text-[10px] text-gray-500 uppercase">SIZE: {item.size}</span>
+                        <span className="font-mono text-[10px] text-text-muted uppercase">SIZE: {item.size}</span>
                         
                         {/* Qty Adjustment */}
-                        <div className="flex items-center gap-2 border border-white/10 rounded px-2 py-0.5">
+                        <div className="flex items-center gap-2 border border-border-theme rounded px-2 py-0.5 bg-bg-page/30">
                           <button
                             onClick={() => handleQtyChange(item.product.id, item.size, item.qty - 1)}
-                            className="text-gray-500 hover:text-white p-0.5 transition-colors cursor-pointer"
+                            className="text-text-muted hover:text-primary p-0.5 transition-colors cursor-pointer"
                             aria-label="Decrease Qty"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
-                          <span className="font-mono text-xs text-primary/95 min-w-[12px] text-center">{item.qty}</span>
+                          <span className="font-mono text-xs text-primary font-semibold min-w-[12px] text-center">{item.qty}</span>
                           <button
                             onClick={() => handleQtyChange(item.product.id, item.size, item.qty + 1)}
-                            className="text-gray-500 hover:text-white p-0.5 transition-colors cursor-pointer"
+                            className="text-text-muted hover:text-primary p-0.5 transition-colors cursor-pointer"
                             aria-label="Increase Qty"
                           >
                             <Plus className="w-3 h-3" />
@@ -147,12 +148,12 @@ export default function CartPage() {
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center pt-3 border-t border-white/5 mt-3">
-                      <span className="text-[9px] text-gray-600 font-mono uppercase">{item.product.drop}</span>
+                    <div className="flex justify-between items-center pt-3 border-t border-border-theme mt-3">
+                      <span className="text-[9px] text-text-muted font-mono uppercase">{item.product.drop}</span>
 
                       <button
                         onClick={() => handleRemove(item.product.id, item.size)}
-                        className="text-gray-500 hover:text-red-500 transition-colors p-1 cursor-pointer"
+                        className="text-text-muted hover:text-red-500 transition-colors p-1 cursor-pointer"
                         aria-label="Remove item"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -164,61 +165,66 @@ export default function CartPage() {
             </div>
 
             {/* Right: Summary panel (Col 8-12) */}
-            <div className="lg:col-span-5 bg-black/80 border border-white/5 rounded-2xl p-6 flex flex-col gap-6">
-              <h2 className="text-xs font-mono uppercase tracking-widest text-primary/80 border-b border-white/5 pb-3">
+            <div className="lg:col-span-5 bg-bg-card border border-border-theme rounded-2xl p-6 flex flex-col gap-6 relative overflow-visible shadow-lg">
+              {/* Premium Stamped Wax Seal */}
+              <div className="absolute top-[-30px] right-[-15px] z-30 pointer-events-none hidden sm:block">
+                <WaxSeal size={70} />
+              </div>
+
+              <h2 className="text-xs font-mono uppercase tracking-widest text-primary border-b border-border-theme pb-3">
                 Acquisition Summary
               </h2>
 
-              <div className="flex flex-col gap-3 font-mono text-xs text-gray-400">
+              <div className="flex flex-col gap-3 font-mono text-xs text-text-muted">
                 <div className="flex justify-between">
                   <span>SUBTOTAL:</span>
-                  <span className="text-[#E1E0CC]">₹{subtotal.toLocaleString("en-IN")}</span>
+                  <span className="text-text-page font-medium">₹{subtotal.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>SHIPPING:</span>
-                  <span className="text-primary">FREE (SANCTUARY COMP)</span>
+                  <span className="text-primary font-medium">FREE (SANCTUARY COMP)</span>
                 </div>
-                <div className="flex justify-between border-t border-white/5 pt-3 text-sm font-bold text-primary">
+                <div className="flex justify-between border-t border-border-theme pt-3 text-sm font-bold text-primary">
                   <span>TOTAL:</span>
                   <span>₹{total.toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
               {/* Promo input */}
-              <div className="bg-black/60 border border-white/5 rounded-lg p-2.5 flex items-center gap-2">
-                <Tag className="w-3.5 h-3.5 text-primary/60" />
+              <div className="bg-bg-page/60 border border-border-theme rounded-lg p-2.5 flex items-center gap-2">
+                <Tag className="w-3.5 h-3.5 text-primary" />
                 <input
                   type="text"
                   placeholder="ENTER PROMO CODE"
-                  className="bg-transparent outline-none border-none text-[10px] font-mono text-primary placeholder-gray-600 flex-grow uppercase"
+                  className="bg-transparent outline-none border-none text-[10px] font-mono text-primary placeholder-text-dim/50 flex-grow uppercase"
                 />
               </div>
 
               {/* Checkout CTA */}
               <button
                 onClick={handleCheckout}
-                className="w-full bg-primary hover:bg-[#D4D0BC] text-black font-mono font-medium text-xs tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase font-semibold"
+                className="w-full bg-primary hover:bg-primary/90 text-bg-page font-mono font-medium text-xs tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase font-semibold shadow-md hover:shadow-primary/10"
               >
                 <span>INITIATE RITUAL CHECKOUT</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
-              <div className="flex items-center justify-center gap-2 text-[10px] text-gray-500 font-mono uppercase">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <div className="flex items-center justify-center gap-2 text-[10px] text-text-muted font-mono uppercase">
+                <ShieldCheck className="w-4 h-4 text-primary" />
                 <span>Secure SSL encrypted drop servers</span>
               </div>
             </div>
           </div>
         ) : (
-          <div className="text-center py-20 bg-black/40 border border-white/5 rounded-3xl max-w-xl mx-auto px-6">
-            <ShoppingBag className="w-8 h-8 text-gray-700 mx-auto mb-6" />
-            <h2 className="text-base text-primary uppercase tracking-widest mb-2 font-mono">Sanctuary is Empty</h2>
-            <p className="text-xs text-gray-500 font-light max-w-sm mx-auto mb-8 leading-relaxed">
+          <div className="text-center py-20 bg-bg-card border border-border-theme rounded-3xl max-w-xl mx-auto px-6 shadow-sm">
+            <ShoppingBag className="w-8 h-8 text-text-muted mx-auto mb-6" />
+            <h2 className="text-base text-text-page uppercase tracking-widest mb-2 font-mono">Sanctuary is Empty</h2>
+            <p className="text-xs text-text-muted font-light max-w-sm mx-auto mb-8 leading-relaxed">
               No artifacts have been selected. Secure your weapons in the sanctuary archives.
             </p>
             <Link
               href="/shop"
-              className="inline-flex items-center gap-2 bg-primary text-black font-mono text-xs px-6 py-3 rounded-full font-medium tracking-widest transition-transform duration-300 hover:scale-102"
+              className="inline-flex items-center gap-2 bg-primary text-bg-page font-mono text-xs px-6 py-3 rounded-full font-medium tracking-widest transition-transform duration-300 hover:scale-102"
             >
               <span>EXPLORE ARCHIVES</span>
             </Link>

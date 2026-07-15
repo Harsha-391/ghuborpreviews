@@ -33,10 +33,10 @@ export default function WishlistPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070202] text-[#E1E0CC] selection:bg-red-950 selection:text-primary relative overflow-x-hidden pb-24">
+    <div className="min-h-screen bg-bg-page text-text-page selection:bg-accent selection:text-primary relative overflow-x-hidden pb-24">
       {/* Background Noise and glows */}
       <div className="bg-noise absolute inset-0 opacity-[0.08] pointer-events-none z-0" />
-      <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-red-950/15 rounded-full blur-[140px] pointer-events-none z-0" />
+      <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[140px] pointer-events-none z-0" />
 
       {/* Global Navbar */}
       <Navbar absolute={false} />
@@ -44,10 +44,10 @@ export default function WishlistPage() {
       <main className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
         {/* Header */}
         <div className="text-center mb-16">
-          <span className="text-primary text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase block mb-3">
+          <span className="text-primary text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase block mb-3 animate-pulse">
             THE SANCTUARY
           </span>
-          <h1 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-[#E1E0CC] font-light tracking-wide leading-none">
+          <h1 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-text-page font-light tracking-wide leading-none">
             Marked Artifacts
           </h1>
           <div className="w-12 h-[1px] bg-primary/20 mx-auto mt-6" />
@@ -61,10 +61,10 @@ export default function WishlistPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: idx * 0.1, ease }}
-                className="flex flex-col sm:flex-row gap-6 items-center bg-black/60 border border-white/5 rounded-2xl p-6 hover:border-primary/20 transition-all duration-300"
+                className="flex flex-col sm:flex-row gap-6 items-center bg-bg-card border border-border-theme rounded-2xl p-6 hover:border-primary/20 transition-all duration-300 shadow-sm"
               >
                 {/* Product Image */}
-                <Link href={`/shop/${item.id}`} className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-black/40 border border-white/5 shrink-0">
+                <Link href={`/shop/${item.id}`} className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-bg-page/40 border border-border-theme shrink-0">
                   <img
                     src={item.image}
                     alt={item.title}
@@ -74,21 +74,21 @@ export default function WishlistPage() {
 
                 {/* Info */}
                 <div className="flex-grow text-center sm:text-left">
-                  <span className="text-[8px] font-mono text-gray-500 tracking-wider uppercase border border-white/5 px-2 py-0.5 rounded">
+                  <span className="text-[8px] font-mono text-text-muted tracking-wider uppercase border border-border-theme px-2 py-0.5 rounded">
                     {item.drop}
                   </span>
-                  <h3 className="text-sm sm:text-base font-semibold tracking-widest text-[#E1E0CC] uppercase mt-2">
+                  <h3 className="text-sm sm:text-base font-semibold tracking-widest text-text-page uppercase mt-2 hover:text-primary transition-colors">
                     <Link href={`/shop/${item.id}`}>{item.title}</Link>
                   </h3>
-                  <p className="text-xs text-gray-500 font-light mt-1 uppercase tracking-wider">{item.fabric}</p>
-                  <p className="text-xs text-primary/80 font-mono mt-2">{item.price}</p>
+                  <p className="text-xs text-text-muted font-light mt-1 uppercase tracking-wider">{item.fabric}</p>
+                  <p className="text-xs text-primary font-mono mt-2 font-medium">{item.price}</p>
                 </div>
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0 mt-4 sm:mt-0">
                   <Link
                     href={`/shop/${item.id}`}
-                    className="flex-grow sm:flex-grow-0 bg-primary hover:bg-[#D4D0BC] text-black font-mono font-medium text-[10px] tracking-widest py-3 px-5 rounded-full text-center transition-all duration-300 flex items-center justify-center gap-1.5 uppercase"
+                    className="flex-grow sm:flex-grow-0 bg-primary hover:bg-primary/90 text-bg-page font-mono font-medium text-[10px] tracking-widest py-3 px-5 rounded-full text-center transition-all duration-300 flex items-center justify-center gap-1.5 uppercase font-semibold shadow-sm hover:shadow-primary/10"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
                     <span>ACQUIRE</span>
@@ -96,7 +96,7 @@ export default function WishlistPage() {
 
                   <button
                     onClick={() => handleRemove(item.id)}
-                    className="flex-grow sm:flex-grow-0 bg-transparent hover:bg-white/5 border border-white/5 hover:border-white/10 text-gray-500 hover:text-red-500 font-mono text-[10px] py-3 px-4 rounded-full transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer uppercase"
+                    className="flex-grow sm:flex-grow-0 bg-transparent hover:bg-bg-card-alt border border-border-theme text-text-muted hover:text-red-500 font-mono text-[10px] py-3 px-4 rounded-full transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer uppercase font-semibold"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>REMOVE</span>
@@ -116,15 +116,15 @@ export default function WishlistPage() {
             </div>
           </div>
         ) : (
-          <div className="text-center py-20 bg-black/40 border border-white/5 rounded-3xl max-w-xl mx-auto px-6">
-            <Heart className="w-8 h-8 text-gray-700 mx-auto mb-6" />
-            <h2 className="text-base text-primary uppercase tracking-widest mb-2 font-mono">Wishlist is Silent</h2>
-            <p className="text-xs text-gray-500 font-light max-w-sm mx-auto mb-8 leading-relaxed">
+          <div className="text-center py-20 bg-bg-card border border-border-theme rounded-3xl max-w-xl mx-auto px-6 shadow-sm">
+            <Heart className="w-8 h-8 text-text-muted mx-auto mb-6" />
+            <h2 className="text-base text-text-page uppercase tracking-widest mb-2 font-mono">Wishlist is Silent</h2>
+            <p className="text-xs text-text-muted font-light max-w-sm mx-auto mb-8 leading-relaxed">
               No artifacts have been marked. Visit the Sanctuary archives to secure your selections before they expire.
             </p>
             <Link
               href="/shop"
-              className="inline-flex items-center gap-2 bg-primary text-black font-mono text-xs px-6 py-3 rounded-full font-medium tracking-widest transition-transform duration-300 hover:scale-102"
+              className="inline-flex items-center gap-2 bg-primary text-bg-page font-mono text-xs px-6 py-3 rounded-full font-medium tracking-widest transition-transform duration-300 hover:scale-102"
             >
               <span>EXPLORE ARCHIVES</span>
             </Link>

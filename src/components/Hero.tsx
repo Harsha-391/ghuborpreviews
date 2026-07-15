@@ -26,7 +26,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
         <div className="absolute inset-0 z-0 pointer-events-none">
           <motion.div
             initial={{ scale: 1.1, opacity: 0 }}
-            animate={loading ? {} : { scale: 1, opacity: 0.55 }}
+            animate={loading ? {} : { scale: 1, opacity: 0.85 }}
             transition={{ duration: 2.5, ease: ease }}
             style={{ willChange: "transform, opacity" }}
             className="w-full h-full"
@@ -34,16 +34,33 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
             <img
               src={getImageUrl("hero")}
               alt="Ghubor Hero Cinematic"
-              className="w-full h-full object-cover object-center filter brightness-90 contrast-110"
+              className="w-full h-full object-cover object-center filter brightness-95 contrast-105"
             />
           </motion.div>
 
           {/* Noise Overlay */}
-          <div className="noise-overlay absolute inset-0 opacity-[0.4] mix-blend-overlay pointer-events-none" />
+          <div className="noise-overlay absolute inset-0 opacity-[0.12] mix-blend-overlay pointer-events-none" />
 
-          {/* Red/Oxblood accent glowing spot */}
-          <div className="absolute bottom-[20%] left-[20%] w-[300px] h-[300px] bg-red-950/20 rounded-full blur-[120px] pointer-events-none" />
-          <div className="absolute top-[10%] right-[10%] w-[400px] h-[400px] bg-red-900/10 rounded-full blur-[160px] pointer-events-none" />
+          {/* Crimson ink pool — lower left */}
+          <div
+            className="absolute bottom-[12%] left-[12%] w-[400px] h-[360px] opacity-[0.22] pointer-events-none"
+            style={{ background: "#C0392B", borderRadius: "73% 27% 63% 37% / 54% 47% 53% 46%", filter: "blur(110px)" }}
+          />
+          {/* Deep oxblood — upper right */}
+          <div
+            className="absolute top-[6%] right-[6%] w-[500px] h-[440px] opacity-[0.12] pointer-events-none"
+            style={{ background: "#5C0606", borderRadius: "38% 62% 46% 54% / 60% 35% 65% 40%", filter: "blur(140px)" }}
+          />
+          {/* Warm parchment breath — upper left */}
+          <div
+            className="absolute top-[18%] left-[4%] w-[280px] h-[320px] opacity-[0.06] pointer-events-none"
+            style={{ background: "#D4C5A9", borderRadius: "55% 45% 38% 62% / 48% 60% 40% 52%", filter: "blur(90px)" }}
+          />
+          {/* Small scattered crimson drop — bottom right */}
+          <div
+            className="absolute bottom-[30%] right-[25%] w-[180px] h-[200px] opacity-[0.10] pointer-events-none"
+            style={{ background: "#C0392B", borderRadius: "64% 36% 52% 48% / 45% 56% 44% 55%", filter: "blur(65px)" }}
+          />
 
           {/* Vignette Gradients */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/95" />

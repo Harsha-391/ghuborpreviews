@@ -52,8 +52,26 @@ export default function Features() {
       {/* Subtle background noise overlay */}
       <div className="bg-noise absolute inset-0 opacity-[0.12] pointer-events-none z-0" />
       
-      {/* Oxblood background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-red-950/10 rounded-full blur-[150px] pointer-events-none z-0" />
+      {/* Left flank — organic crimson splash */}
+      <div
+        className="absolute top-[20%] -left-24 w-[440px] h-[520px] opacity-[0.07] pointer-events-none z-0"
+        style={{ background: "#C0392B", borderRadius: "64% 36% 52% 48% / 45% 56% 44% 55%", filter: "blur(100px)" }}
+      />
+      {/* Right flank — deep oxblood */}
+      <div
+        className="absolute bottom-[15%] -right-24 w-[400px] h-[480px] opacity-[0.06] pointer-events-none z-0"
+        style={{ background: "#5C0606", borderRadius: "42% 58% 67% 33% / 55% 42% 58% 45%", filter: "blur(110px)" }}
+      />
+      {/* Center — warm parchment ambient breath */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[320px] opacity-[0.04] pointer-events-none z-0"
+        style={{ background: "#D4C5A9", borderRadius: "55% 45% 38% 62% / 50% 60% 40% 50%", filter: "blur(130px)" }}
+      />
+      {/* Small top-right accent drop */}
+      <div
+        className="absolute top-[8%] right-[12%] w-[200px] h-[180px] opacity-[0.08] pointer-events-none z-0"
+        style={{ background: "#C0392B", borderRadius: "73% 27% 46% 54% / 54% 47% 53% 46%", filter: "blur(70px)" }}
+      />
 
       {/* Header Container */}
       <div className="text-center mb-16 relative z-10 max-w-4xl mx-auto">
@@ -128,7 +146,7 @@ export default function Features() {
 
             {/* Title */}
             <h3 className="text-xl sm:text-2xl font-light text-text-page font-serif tracking-wide mb-6">
-              Struggle.
+              01. Armored Build
             </h3>
 
             {/* Checklist */}
@@ -136,19 +154,19 @@ export default function Features() {
               <li className="flex gap-3 items-start">
                 <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-xs text-text-muted font-light leading-tight">
-                  The weight of being human: grief, doubt, and the silent, unseen war.
+                  Engineered with 480GSM ultra-heavyweight cotton canvas and combed loopback weave.
                 </span>
               </li>
               <li className="flex gap-3 items-start">
                 <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-xs text-text-muted font-light leading-tight">
-                  Armor forged to protect the soul from external battles.
+                  Structured contours and dropped shoulders that drape to act as a physical shield.
                 </span>
               </li>
               <li className="flex gap-3 items-start">
                 <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-xs text-text-muted font-light leading-tight">
-                  Premium oxblood canvas representing earthly struggle.
+                  Distressed raw edge hems symbolizing lifetime resilience and the weight of struggle.
                 </span>
               </li>
             </ul>
@@ -188,7 +206,7 @@ export default function Features() {
 
             {/* Title */}
             <h3 className="text-xl sm:text-2xl font-light text-text-page font-serif tracking-wide mb-6">
-              Faith.
+              02. Hidden Inscriptions
             </h3>
 
             {/* Checklist */}
@@ -196,19 +214,19 @@ export default function Features() {
               <li className="flex gap-3 items-start">
                 <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-xs text-text-muted font-light leading-tight">
-                  Belief without proof: the quiet rituals that hold us upright.
+                  Private scripture fragments printed on the interior lining of collars and hoods.
                 </span>
               </li>
               <li className="flex gap-3 items-start">
                 <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-xs text-text-muted font-light leading-tight">
-                  Wearable scripture fragments printed as private journal entries.
+                  High-density oxblood and matte black gothic calligraphy chest embroidery.
                 </span>
               </li>
               <li className="flex gap-3 items-start">
                 <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-xs text-text-muted font-light leading-tight">
-                  Deep navy stitches representing sacred devotion and trust.
+                  A personal dialogue between the garment and your skin, representing silent faith.
                 </span>
               </li>
             </ul>
@@ -248,7 +266,7 @@ export default function Features() {
 
             {/* Title */}
             <h3 className="text-xl sm:text-2xl font-light text-text-page font-serif tracking-wide mb-6">
-              Transcendence.
+              03. Archival Relics
             </h3>
 
             {/* Checklist */}
@@ -256,19 +274,19 @@ export default function Features() {
               <li className="flex gap-3 items-start">
                 <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-xs text-text-muted font-light leading-tight">
-                  Rising above the flesh: the moment the armor becomes skin.
+                  Limited production runs of exactly 64 hand-numbered replicas per silhouette.
                 </span>
               </li>
               <li className="flex gap-3 items-start">
                 <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-xs text-text-muted font-light leading-tight">
-                  The signature Gibbor mark appearing on each final artifact.
+                  Custom hand-numbered leather patches and woven interior tracking codes.
                 </span>
               </li>
               <li className="flex gap-3 items-start">
                 <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-xs text-text-muted font-light leading-tight">
-                  Hand-numbered tag verifying origin, rendering it unique.
+                  Each garment stands as a certified relic of struggle, faith, and transcendence.
                 </span>
               </li>
             </ul>

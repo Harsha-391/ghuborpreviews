@@ -11,7 +11,9 @@ export interface Product {
   id: string;
   title: string;
   price: string;
+  mrp?: string;
   image: string;
+  backImage?: string; // Optional back view image for formal presentation
   description: string;
   fullDescription: string;
   howToUse: string[];
@@ -20,6 +22,7 @@ export interface Product {
   fabric: string;
   weight: string;
   drop: string;
+  category?: string;
 }
 
 export const products: Product[] = [
@@ -28,6 +31,7 @@ export const products: Product[] = [
     title: "SACRED SHIELD HOODIE",
     price: "₹6,800",
     image: "/images/products/hoodie.png",
+    backImage: "/images/products/hoodie-back.png",
     description: "Armor forged in 480GSM French terry. Features subtle oxblood blackletter scriptural embroidery on the chest and custom back print.",
     fullDescription: "Constructed as a physical barrier for modern battles. This heavyweight hoodie features a double-layered hood, dropped shoulders, and a custom hand-numbered tag near the hem. The custom oxblood embroidery is made with high-density thread, creating a raised scripture texture that you can feel under your fingertips.",
     howToUse: [
@@ -50,13 +54,14 @@ export const products: Product[] = [
     ],
     fabric: "100% Organic Cotton French Terry",
     weight: "480 GSM",
-    drop: "DROP 02"
+    drop: "DROP 01"
   },
   {
     id: "jacket",
     title: "SILENT BATTLE FIELD JACKET",
     price: "₹11,200",
     image: "/images/products/jacket.png",
+    backImage: "/images/products/jacket-back.png",
     description: "Heavy raw canvas field jacket in washed obsidian. Inner lining printed with private scripture entries.",
     fullDescription: "A structure designed to endure. Built from double-weave 14oz raw cotton canvas, this field jacket features a concealed metallic zipper, storm flap, and four modular utility pockets. The interior is fully lined with a lightweight silk-cotton blend printed with handwritten scripture fragments, keeping the armor's meaning private to the wearer.",
     howToUse: [
@@ -79,13 +84,14 @@ export const products: Product[] = [
     ],
     fabric: "14oz Raw Cotton Canvas / Silk-Cotton lining",
     weight: "Heavyweight Double-Weave",
-    drop: "DROP 02"
+    drop: "DROP 01"
   },
   {
     id: "longsleeve",
     title: "MODERN GIBBOR MOCKNECK",
     price: "₹4,500",
     image: "/images/products/longsleeve.png",
+    backImage: "/images/products/longsleeve-back.png",
     description: "Dense knit mockneck longsleeve. Ribbed collar and cuffs with crimson scripture-like fragments on the sleeves.",
     fullDescription: "A second skin for daily wear. Made from high-gauge, long-staple combed cotton with 5% elastane for slight recovery. Features a high mockneck structure that holds its form after washing, accented by deep crimson scriptural prints along the sleeve seams, referencing silent endurance.",
     howToUse: [
@@ -108,7 +114,7 @@ export const products: Product[] = [
     ],
     fabric: "95% Combed Cotton, 5% Elastane",
     weight: "320 GSM",
-    drop: "DROP 02"
+    drop: "DROP 01"
   },
   {
     id: "pants",
@@ -137,13 +143,14 @@ export const products: Product[] = [
     ],
     fabric: "13.5oz Japanese Selvage Denim",
     weight: "Medium-Heavy",
-    drop: "DROP 02"
+    drop: "DROP 01"
   },
   {
     id: "tshirt",
     title: "SCRIPTURE FRAGMENT TEE",
     price: "₹3,800",
     image: "/images/products/tshirt.png",
+    backImage: "/images/products/tshirt-back.png",
     description: "300GSM carded cotton t-shirt in vintage black. Slightly distressed collar and gothic chest print.",
     fullDescription: "The essential shirt of the modern Gibbor. Made from extremely heavy 300GSM carded cotton, this tee is cut in a boxy, oversized fit. It features minor distressed detailing along the collar, hem, and sleeve cuffs, giving it a lived-in, archival feel. The chest is printed with a bold gothic typography text.",
     howToUse: [
@@ -166,7 +173,7 @@ export const products: Product[] = [
     ],
     fabric: "100% Carded Cotton Jersey",
     weight: "300 GSM",
-    drop: "DROP 02"
+    drop: "DROP 01"
   },
   {
     id: "cap",
@@ -188,10 +195,10 @@ export const products: Product[] = [
       "Detailed oxblood gothic calligraphy embroidery on front",
       "Unstructured crown with pre-curved visor",
       "Self-fabric strapback with antique brass clamp",
-      "Inner label featuring drop information (DROP 02)"
+      "Inner label featuring drop information (DROP 01)"
     ],
     fabric: "100% Cotton Canvas",
     weight: "Lightweight, unstructured",
-    drop: "DROP 02"
+    drop: "DROP 01"
   }
 ];
