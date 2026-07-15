@@ -25,15 +25,48 @@ export default function PaymentPage() {
   const [loadingStep, setLoadingStep] = useState("");
   const [shippingAddress, setShippingAddress] = useState<any>({});
 
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadAllProducts = async () => {
+      let mergedProducts = [...products];
+      try {
+        if (db) {
+          const { collection, getDocs } = await import("firebase/firestore");
+          const snap = await getDocs(collection(db, "cms-products"));
+          if (!snap.empty) {
+            const dbList = snap.docs.map((d) => {
+              const data = d.data();
+              return {
+                id: d.id,
+                ...data,
+                image: data.darkImage || data.lightImage || "",
+                backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
+              };
+            });
+            mergedProducts = [...dbList, ...products];
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch Firestore products on payment:", err);
+      }
+      setAllProducts(mergedProducts);
+    };
+
+    loadAllProducts();
+  }, []);
+
   // Load cart items and calculate total price
   useEffect(() => {
+    if (allProducts.length === 0) return;
+
     const items = getCart();
     if (items.length === 0) {
       router.push("/cart");
       return;
     }
     const subtotal = items.reduce((acc, item) => {
-      const product = products.find((p) => p.id === item.id);
+      const product = allProducts.find((p) => p.id === item.id);
       if (product) {
         const price = parseInt(product.price.replace(/[^0-9]/g, ""), 10);
         return acc + price * item.qty;
@@ -55,7 +88,7 @@ export default function PaymentPage() {
         }
       }
     }
-  }, [router]);
+  }, [router, allProducts]);
 
   // Load verified customer details from website checkout state
   useEffect(() => {
@@ -119,7 +152,7 @@ export default function PaymentPage() {
           const cart = getCart();
           const orderItems = cart
             .map((item) => {
-              const product = products.find((p) => p.id === item.id);
+              const product = allProducts.find((p) => p.id === item.id);
               return {
                 id: item.id,
                 size: item.size,

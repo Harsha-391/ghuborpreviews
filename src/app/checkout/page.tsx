@@ -11,7 +11,7 @@ import { products, Product } from "../../data/products";
 import { getCart } from "../../utils/store";
 import { useAuth } from "../../components/AuthContext";
 import WaxSeal from "../../components/WaxSeal";
-import { auth } from "../../utils/firebase";
+import { auth, db } from "../../utils/firebase";
 import { RecaptchaVerifier, PhoneAuthProvider, linkWithCredential } from "firebase/auth";
 
 interface DisplayCartItem {
@@ -95,7 +95,40 @@ export default function CheckoutPage() {
   }, [profile]);
 
 
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+
   useEffect(() => {
+    const loadAllProducts = async () => {
+      let mergedProducts = [...products];
+      try {
+        if (db) {
+          const { collection, getDocs } = await import("firebase/firestore");
+          const snap = await getDocs(collection(db, "cms-products"));
+          if (!snap.empty) {
+            const dbList = snap.docs.map((d) => {
+              const data = d.data();
+              return {
+                id: d.id,
+                ...data,
+                image: data.darkImage || data.lightImage || "",
+                backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
+              };
+            });
+            mergedProducts = [...dbList, ...products];
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch Firestore products on checkout:", err);
+      }
+      setAllProducts(mergedProducts);
+    };
+
+    loadAllProducts();
+  }, []);
+
+  useEffect(() => {
+    if (allProducts.length === 0) return; // Wait for products to load
+
     const items = getCart();
     if (items.length === 0) {
       router.push("/cart");
@@ -103,7 +136,7 @@ export default function CheckoutPage() {
     }
     const displayItems = items
       .map((item) => {
-        const product = products.find((p) => p.id === item.id);
+        const product = allProducts.find((p) => p.id === item.id);
         return {
           product,
           size: item.size,
@@ -112,7 +145,7 @@ export default function CheckoutPage() {
       })
       .filter((item) => item.product !== undefined) as DisplayCartItem[];
     setCartItems(displayItems);
-  }, [router]);
+  }, [router, allProducts]);
 
   const parsePrice = (priceStr: string) => {
     return parseInt(priceStr.replace(/[^0-9]/g, ""), 10);

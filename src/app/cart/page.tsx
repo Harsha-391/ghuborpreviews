@@ -10,6 +10,7 @@ import Footer from "../../components/Footer";
 import { products, Product } from "../../data/products";
 import { getCart, removeFromCart, updateCartQty } from "../../utils/store";
 import WaxSeal from "../../components/WaxSeal";
+import { db } from "../../utils/firebase";
 
 interface DisplayCartItem {
   product: Product;
@@ -22,13 +23,45 @@ export default function CartPage() {
   const router = useRouter();
 
   const [cartItems, setCartItems] = useState<DisplayCartItem[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
 
   useEffect(() => {
+    const loadAllProducts = async () => {
+      let mergedProducts = [...products];
+      try {
+        if (db) {
+          const { collection, getDocs } = await import("firebase/firestore");
+          const snap = await getDocs(collection(db, "cms-products"));
+          if (!snap.empty) {
+            const dbList = snap.docs.map((d) => {
+              const data = d.data();
+              return {
+                id: d.id,
+                ...data,
+                image: data.darkImage || data.lightImage || "",
+                backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
+              };
+            });
+            mergedProducts = [...dbList, ...products];
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch Firestore products on cart:", err);
+      }
+      setAllProducts(mergedProducts);
+    };
+
+    loadAllProducts();
+  }, []);
+
+  useEffect(() => {
+    if (allProducts.length === 0) return;
+
     const loadCart = () => {
       const items = getCart();
       const displayItems = items
         .map((item) => {
-          const product = products.find((p) => p.id === item.id);
+          const product = allProducts.find((p) => p.id === item.id);
           return {
             product,
             size: item.size,
@@ -44,7 +77,7 @@ export default function CartPage() {
     return () => {
       window.removeEventListener("cart-updated", loadCart);
     };
-  }, []);
+  }, [allProducts]);
 
   const parsePrice = (priceStr: string) => {
     return parseInt(priceStr.replace(/[^0-9]/g, ""), 10);
