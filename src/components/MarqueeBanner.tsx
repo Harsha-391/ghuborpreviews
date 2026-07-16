@@ -4,12 +4,12 @@ import React, { useRef, useState, useEffect } from "react";
 
 export default function MarqueeBanner() {
   const items = [
-    "ARCHIVAL SALE ACTIVE",
-    "USE CODE: GIBBOR10 FOR 10% OFF",
-    "WEARABLE SCRIPTURE",
-    "USE CODE: SACRED15 FOR 15% OFF",
-    "FIGHTING BATTLES NOBODY SEES",
-    "LIMITED ARTIFACT DROP",
+    "LAUNCH35 FOR 35% OFF",
+    "LAUNCH35 FOR 35% OFF",
+    "LAUNCH35 FOR 35% OFF",
+    "LAUNCH35 FOR 35% OFF",
+    "LAUNCH35 FOR 35% OFF",
+    "LAUNCH35 FOR 35% OFF",
   ];
 
   const containerRef = useRef<HTMLDivElement>(null);

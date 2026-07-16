@@ -142,6 +142,21 @@ export default function Navbar({ absolute = false }: NavbarProps) {
           >
             {theme === "dark" ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
           </button>
+
+          {/* Persistent Cart Icon */}
+          <Link
+            href="/cart"
+            className="text-primary hover:text-white p-1.5 transition-colors relative"
+            aria-label="View Cart"
+          >
+            <ShoppingBag className="w-4.5 h-4.5" />
+            {cartCount > 0 && (
+              <span className="absolute top-0.5 right-0.5 px-1 py-0.5 text-[7px] font-mono leading-none bg-primary text-bg-page rounded-full font-bold shadow-[0_0_4px_rgba(222,219,200,0.5)]">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+
           <button
             onClick={toggleMenu}
             aria-label="Toggle Menu"
@@ -171,7 +186,7 @@ export default function Navbar({ absolute = false }: NavbarProps) {
 
               {/* Navigation links */}
               <div className="flex flex-col gap-3">
-                {navLinks.map((link, idx) => {
+                {navLinks.filter(l => l.id !== "cart").map((link, idx) => {
                   const isActive = pathname === link.href;
                   const Icon = link.icon;
                   return (
