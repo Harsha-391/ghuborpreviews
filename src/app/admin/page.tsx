@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, Save, RefreshCw, Sparkles, Check, Image as ImageIcon,
+  ArrowLeft, ArrowRight, Save, RefreshCw, Sparkles, Check, Image as ImageIcon,
   Sun, Moon, LayoutGrid, Package, BookOpen, Tag, Plus, Trash2,
   Globe, Lock, Search, X, Star, ToggleLeft, ToggleRight,
   Truck, TrendingUp, ShoppingBag, DollarSign, Users, Eye, EyeOff, Mail,
@@ -12,6 +12,7 @@ import {
   Warehouse, Sliders, Clipboard, Edit3, Printer, Download, CheckCircle
 } from "lucide-react";
 import { useImageConfig, DEFAULT_IMAGE_CONFIGS, ImageConfigs } from "../../components/ImageConfigContext";
+import { CMSProductImage } from "../../data/products";
 import { useTheme } from "../../components/ThemeContext";
 import {
   CMSProduct, CMSBlogPost, CMSCategory, CMSCoupon,
@@ -226,6 +227,230 @@ function DualImageUploader({
         <DragDropUploader label="Dark Theme Image" value={darkValue} onChange={onDarkChange} folder={folder} theme="dark" />
         <DragDropUploader label="Light Theme Image" value={lightValue} onChange={onLightChange} folder={folder} theme="light" />
       </div>
+    </div>
+  );
+}
+
+function MultiImageUploader({
+  label, images = [], onChange, folder, theme: uploadTheme
+}: {
+  label: string;
+  images: CMSProductImage[];
+  onChange: (imgs: CMSProductImage[]) => void;
+  folder: UploadFolder;
+  theme: "dark" | "light";
+}) {
+  const [dragging, setDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isDark = uploadTheme === "dark";
+
+  const handleFile = async (file: File) => {
+    setError("");
+    setUploading(true);
+    setProgress(0);
+    try {
+      const url = await uploadImage(file, folder, uploadTheme, (p) => {
+        setProgress(p.percent);
+        if (p.state === "error") {
+          setError(p.error || "Upload failed");
+          setUploading(false);
+        }
+      });
+      const defaultLabel = images.length === 0 ? "Front View" : images.length === 1 ? "Back View" : "Detail View";
+      const newImg: CMSProductImage = {
+        id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        url,
+        alt: "",
+        label: defaultLabel,
+      };
+      onChange([...images, newImg]);
+    } catch (err: any) {
+      setError(err.message || "Upload failed.");
+    } finally {
+      setUploading(false);
+      setProgress(0);
+    }
+  };
+
+  const removeImage = (id: string) => {
+    onChange(images.filter((img) => img.id !== id));
+  };
+
+  const move = (fromIdx: number, toIdx: number) => {
+    if (toIdx < 0 || toIdx >= images.length) return;
+    const updated = [...images];
+    const [movedItem] = updated.splice(fromIdx, 1);
+    updated.splice(toIdx, 0, movedItem);
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <label className={`text-[9px] font-mono tracking-wider uppercase inline-flex items-center gap-1 px-2 py-0.5 rounded border ${
+          isDark
+            ? "text-[#E1E0CC] bg-[#111] border-white/10"
+            : "text-[#5C0606] bg-[#FFF0E8] border-[#5C0606]/20"
+        }`}>
+          {isDark ? <Moon className="w-2.5 h-2.5" /> : <Sun className="w-2.5 h-2.5" />}
+          {label}
+        </label>
+        <span className="text-[9px] font-mono text-text-dim uppercase tracking-wider">
+          {images.length} Image{images.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {images.map((img, idx) => (
+          <div
+            key={img.id || idx}
+            className="relative aspect-[4/5] bg-bg-page/40 border border-border-theme rounded-xl overflow-hidden group flex flex-col justify-between p-2.5"
+          >
+            {/* Thumbnail */}
+            <div className="relative flex-grow min-h-0 aspect-[4/5] bg-black/10 rounded-lg overflow-hidden border border-border-theme/40 mb-2">
+              <img
+                src={img.url}
+                alt={img.alt || "Product image"}
+                className="w-full h-full object-cover"
+              />
+              
+              {/* Badge for Main Image */}
+              {idx === 0 ? (
+                <span className="bg-emerald-500/90 text-bg-page text-[8px] font-mono font-bold tracking-widest px-2 py-0.5 rounded absolute top-2 left-2 shadow-md">
+                  MAIN
+                </span>
+              ) : null}
+
+              {/* Hover Delete Button */}
+              <button
+                type="button"
+                onClick={() => removeImage(img.id)}
+                className="absolute top-2 right-2 w-6 h-6 bg-black/80 rounded-full flex items-center justify-center text-white hover:bg-red-500 hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-md"
+                title="Remove Image"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Inputs */}
+            <div className="space-y-1.5 shrink-0">
+              <input
+                type="text"
+                value={img.alt || ""}
+                onChange={(e) => {
+                  const updated = [...images];
+                  updated[idx] = { ...updated[idx], alt: e.target.value };
+                  onChange(updated);
+                }}
+                placeholder="Alt description (SEO)"
+                className="w-full bg-bg-page/80 border border-border-theme/60 rounded px-2 py-1 text-[9px] font-mono text-text-page focus:border-primary/50 focus:outline-none transition-colors"
+              />
+              <input
+                type="text"
+                list={`badge-labels-${uploadTheme}-${idx}`}
+                value={img.label || ""}
+                onChange={(e) => {
+                  const updated = [...images];
+                  updated[idx] = { ...updated[idx], label: e.target.value };
+                  onChange(updated);
+                }}
+                placeholder="Badge label (e.g. Front)"
+                className="w-full bg-bg-page/80 border border-border-theme/60 rounded px-2 py-1 text-[9px] font-mono text-text-page focus:border-primary/50 focus:outline-none transition-colors"
+              />
+              <datalist id={`badge-labels-${uploadTheme}-${idx}`}>
+                <option value="Front View" />
+                <option value="Back View" />
+                <option value="Glyph Details" />
+                <option value="Woven Tag" />
+                <option value="Scripture Details" />
+                <option value="Detail View" />
+                <option value="Fabric View" />
+                <option value="Fit View" />
+              </datalist>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-theme/40 shrink-0">
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  disabled={idx === 0}
+                  onClick={() => move(idx, idx - 1)}
+                  className="p-1 rounded bg-bg-page border border-border-theme text-text-muted hover:text-text-page disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                  title="Move Left"
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  disabled={idx === images.length - 1}
+                  onClick={() => move(idx, idx + 1)}
+                  className="p-1 rounded bg-bg-page border border-border-theme text-text-muted hover:text-text-page disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                  title="Move Right"
+                >
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+              {idx > 0 && (
+                <button
+                  type="button"
+                  onClick={() => move(idx, 0)}
+                  className="text-[8px] font-mono uppercase tracking-widest text-primary hover:text-white px-1.5 py-0.5 rounded border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer"
+                >
+                  Set Main
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {/* Upload Card */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+          onClick={() => !uploading && fileInputRef.current?.click()}
+          className={`relative aspect-[4/5] rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-4 transition-all cursor-pointer overflow-hidden ${
+            dragging
+              ? "border-primary bg-primary/10 scale-[1.01]"
+              : "border-border-theme hover:border-primary/50 hover:bg-primary/5"
+          }`}
+        >
+          {uploading ? (
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 rounded-full border-2 border-primary/30 flex items-center justify-center relative">
+                <div className="absolute inset-0 rounded-full border-2 border-primary border-t-transparent animate-spin" style={{ animationDuration: "0.8s" }} />
+                <span className="text-[9px] font-mono text-primary">{progress}%</span>
+              </div>
+              <span className="text-[9px] font-mono text-text-muted">Uploading...</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-1.5 text-center">
+              <Plus className="w-5 h-5 text-text-dim" />
+              <span className="text-[10px] font-mono text-text-muted font-medium">Add Image</span>
+              <span className="text-[8px] font-mono text-text-dim">Drag & drop or click</span>
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          />
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+          <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+          <p className="text-[9px] text-red-400 font-mono">{error}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -916,15 +1141,46 @@ function ProductsTab() {
     p.category.toLowerCase().includes(search.toLowerCase())
   );
 
+  const startEditing = (p: CMSProduct) => {
+    const imagesDark = p.imagesDark && p.imagesDark.length > 0
+      ? p.imagesDark
+      : [
+          ...(p.darkImage ? [{ id: 'legacy-dark-main', url: p.darkImage, alt: '', label: 'Front View' }] : []),
+          ...(p.galleryDark || []).map((url, i) => ({ id: `legacy-dark-gal-${i}`, url, alt: '', label: `Gallery View ${i + 1}` }))
+        ];
+    const imagesLight = p.imagesLight && p.imagesLight.length > 0
+      ? p.imagesLight
+      : [
+          ...(p.lightImage ? [{ id: 'legacy-light-main', url: p.lightImage, alt: '', label: 'Front View' }] : []),
+          ...(p.galleryLight || []).map((url, i) => ({ id: `legacy-light-gal-${i}`, url, alt: '', label: `Gallery View ${i + 1}` }))
+        ];
+    setEditing({
+      ...p,
+      imagesDark,
+      imagesLight
+    });
+  };
+
   const handleSave = async () => {
     if (!editing) return;
     setSaving(true);
-    await saveProduct(editing);
+    
+    // Auto-populate legacy fields for backwards compatibility
+    const updated: CMSProduct = {
+      ...editing,
+      darkImage: editing.imagesDark?.[0]?.url || "",
+      lightImage: editing.imagesLight?.[0]?.url || "",
+      galleryDark: editing.imagesDark?.slice(1).map(img => img.url) || [],
+      galleryLight: editing.imagesLight?.slice(1).map(img => img.url) || [],
+      updatedAt: Date.now()
+    };
+
+    await saveProduct(updated);
     setSaved(true);
     setProducts(prev => {
-      const idx = prev.findIndex(p => p.id === editing.id);
-      if (idx > -1) { const n = [...prev]; n[idx] = editing; return n; }
-      return [editing, ...prev];
+      const idx = prev.findIndex(p => p.id === updated.id);
+      if (idx > -1) { const n = [...prev]; n[idx] = updated; return n; }
+      return [updated, ...prev];
     });
     setTimeout(() => { setSaving(false); setSaved(false); }, 2000);
   };
@@ -967,7 +1223,7 @@ function ProductsTab() {
               </button>
             </div>
           ) : filtered.map(p => (
-            <div key={p.id} onClick={() => setEditing(p)}
+            <div key={p.id} onClick={() => startEditing(p)}
               className={`bg-bg-card border rounded-xl p-4 cursor-pointer group transition-all hover:border-primary/30 ${editing?.id === p.id ? "border-primary/50 bg-primary/5" : "border-border-theme"}`}>
               <div className="flex items-start gap-3">
                 <div className="w-12 h-14 bg-bg-page rounded-lg overflow-hidden shrink-0 border border-border-theme">
@@ -1031,15 +1287,24 @@ function ProductsTab() {
             <FieldInput label="Full Description" value={editing.fullDescription} onChange={v => update("fullDescription", v)} multiline />
           </SectionCard>
 
-          <SectionCard title="Product Images" subtitle="Drag & drop images for dark and light themes — uploaded directly to Firebase Storage">
-            <DualImageUploader
-              label="Primary Product Image"
-              darkValue={editing.darkImage}
-              lightValue={editing.lightImage}
-              onDarkChange={v => update("darkImage", v)}
-              onLightChange={v => update("lightImage", v)}
-              folder="products"
-            />
+          <SectionCard title="Product Images" subtitle="Add multiple images for both dark and light themes. Drag to upload and click to select files. The first image in the list will be treated as the main/primary product image.">
+            <div className="space-y-6">
+              <MultiImageUploader
+                label="Dark Theme Images"
+                images={editing.imagesDark || []}
+                onChange={v => update("imagesDark", v)}
+                folder="products"
+                theme="dark"
+              />
+              <div className="border-t border-border-theme/20 my-6" />
+              <MultiImageUploader
+                label="Light Theme Images"
+                images={editing.imagesLight || []}
+                onChange={v => update("imagesLight", v)}
+                folder="products"
+                theme="light"
+              />
+            </div>
           </SectionCard>
 
           <SectionCard title="Details & Care">

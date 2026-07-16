@@ -17,6 +17,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { CMSProductImage } from "../data/products";
 
 // ─── TYPE DEFINITIONS ────────────────────────────────────────────────────────
 
@@ -42,6 +43,8 @@ export interface CMSProduct {
   order: number;
   createdAt: number;
   updatedAt: number;
+  imagesDark?: CMSProductImage[];
+  imagesLight?: CMSProductImage[];
 }
 
 export interface CMSBlogPost {
@@ -152,6 +155,8 @@ export function createEmptyProduct(): CMSProduct {
     order: 99,
     createdAt: now(),
     updatedAt: now(),
+    imagesDark: [],
+    imagesLight: [],
   };
 }
 

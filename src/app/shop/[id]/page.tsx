@@ -13,6 +13,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../utils/firebase";
 import { useImageConfig } from "../../../components/ImageConfigContext";
 import { trackPageView, trackProductView } from "../../../utils/analytics";
+import { useTheme } from "../../../components/ThemeContext";
 import WaxSeal from "../../../components/WaxSeal";
 
 export default function ProductDetailPage() {
@@ -21,6 +22,7 @@ export default function ProductDetailPage() {
   const id = params.id as string;
   const ease = [0.16, 1, 0.3, 1] as const;
   const { getImageUrl } = useImageConfig();
+  const { theme } = useTheme();
 
   // Dynamic Product State with local fallback
   const [product, setProduct] = useState<Product | undefined>(() => products.find((p) => p.id === id));
@@ -131,19 +133,50 @@ export default function ProductDetailPage() {
     "Dry clean or wash cold inside out to protect thread integrity."
   ];
 
-  // Dynamic values resolved using ImageConfigContext
-  const currentProductImage = getImageUrl("product-" + product.id, product.image);
-  const currentProductBackImage = product.backImage ? getImageUrl("product-" + product.id + "-back", product.backImage) : undefined;
+  // Resolve product images list based on theme
+  const themeImages = theme === "light" ? product.imagesLight : product.imagesDark;
 
-  const galleryImages = [
-    { label: "Front View", url: currentProductImage },
-    ...(currentProductBackImage ? [{ label: "Back View", url: currentProductBackImage }] : []),
-    { label: "The Glyph", url: getImageUrl("glyph") },
-    { label: "Woven Tag", url: getImageUrl("tag") },
-    { label: "Scripture", url: getImageUrl("scripture") },
-  ];
+  let galleryImages: { label: string; url: string; alt?: string }[] = [];
 
-  const activeImage = galleryImages[activeIndex]?.url || currentProductImage;
+  if (themeImages && themeImages.length > 0) {
+    galleryImages = themeImages.map(img => ({
+      label: img.label || "Product View",
+      url: img.url,
+      alt: img.alt || product.title
+    }));
+  } else {
+    // Legacy fallback
+    const currentProductImage = getImageUrl("product-" + product.id, product.image);
+    const currentProductBackImage = product.backImage ? getImageUrl("product-" + product.id + "-back", product.backImage) : undefined;
+    
+    // Check for legacy gallery images
+    const legacyGallery = theme === "light" ? product.galleryLight : product.galleryDark;
+
+    galleryImages = [
+      { label: "Front View", url: currentProductImage },
+    ];
+
+    if (currentProductBackImage) {
+      galleryImages.push({ label: "Back View", url: currentProductBackImage });
+    }
+
+    if (legacyGallery && legacyGallery.length > 0) {
+      legacyGallery.forEach((url: string, i: number) => {
+        galleryImages.push({ label: `Detail View ${i + 1}`, url });
+      });
+    }
+
+    // Only show default placeholder glyphs if there is only 1 image in total
+    if (galleryImages.length === 1) {
+      galleryImages.push(
+        { label: "The Glyph", url: getImageUrl("glyph") },
+        { label: "Woven Tag", url: getImageUrl("tag") },
+        { label: "Scripture", url: getImageUrl("scripture") }
+      );
+    }
+  }
+
+  const activeImage = galleryImages[activeIndex]?.url || (theme === "light" ? product.lightImage : product.darkImage) || product.image;
 
   return (
     <div className="min-h-screen bg-bg-page text-text-page selection:bg-accent selection:text-primary relative overflow-x-hidden pb-24">
@@ -184,7 +217,7 @@ export default function ProductDetailPage() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
                 src={activeImage || undefined}
-                alt={product.title}
+                alt={galleryImages[activeIndex]?.alt || product.title}
                 className="w-full h-full object-cover object-center"
               />
             </div>
@@ -203,7 +236,7 @@ export default function ProductDetailPage() {
                 >
                   <img
                     src={imgItem.url || undefined}
-                    alt={imgItem.label}
+                    alt={imgItem.alt || imgItem.label}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/10 hover:bg-transparent transition-colors" />

@@ -10,6 +10,13 @@ export interface SizeMeasurement {
   neckline?: string;
 }
 
+export interface CMSProductImage {
+  id: string;
+  url: string;
+  alt: string;
+  label: string;
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -26,6 +33,12 @@ export interface Product {
   weight: string;
   drop: string;
   category?: string;
+  darkImage?: string;
+  lightImage?: string;
+  galleryDark?: string[];
+  galleryLight?: string[];
+  imagesDark?: CMSProductImage[];
+  imagesLight?: CMSProductImage[];
 }
 
 export const products: Product[] = [
