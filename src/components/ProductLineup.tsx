@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, Heart } from "lucide-react";
 import { products } from "../data/products";
@@ -42,34 +42,111 @@ export default function ProductLineup() {
     fetchDbProducts();
   }, []);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInteractingRef = useRef(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let animationFrameId: number;
+    const speed = 0.8; // px per frame
+
+    const updateScroll = () => {
+      if (!isInteractingRef.current) {
+        container.scrollLeft += speed;
+        // Infinite scroll loop reset
+        const halfWidth = container.scrollWidth / 2;
+        if (container.scrollLeft >= halfWidth) {
+          container.scrollLeft -= halfWidth;
+        }
+      }
+      animationFrameId = requestAnimationFrame(updateScroll);
+    };
+
+    animationFrameId = requestAnimationFrame(updateScroll);
+
+    let isDown = false;
+    let startX: number;
+    let scrollLeftVal: number;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      isDown = true;
+      isInteractingRef.current = true;
+      startX = e.pageX - container.offsetLeft;
+      scrollLeftVal = container.scrollLeft;
+    };
+
+    const handleMouseEnter = () => {
+      isInteractingRef.current = true;
+    };
+
+    const handleMouseLeave = () => {
+      isDown = false;
+      isInteractingRef.current = false;
+    };
+
+    const handleMouseUp = () => {
+      isDown = false;
+      isInteractingRef.current = false;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - container.offsetLeft;
+      const walk = (x - startX) * 1.5; // scroll speed multiplier
+      container.scrollLeft = scrollLeftVal - walk;
+    };
+
+    const handleTouchStart = () => {
+      isInteractingRef.current = true;
+    };
+
+    const handleTouchEnd = () => {
+      setTimeout(() => {
+        isInteractingRef.current = false;
+      }, 1000);
+    };
+
+    container.addEventListener("mousedown", handleMouseDown);
+    container.addEventListener("mouseenter", handleMouseEnter);
+    container.addEventListener("mouseleave", handleMouseLeave);
+    container.addEventListener("mouseup", handleMouseUp);
+    container.addEventListener("mousemove", handleMouseMove);
+    
+    container.addEventListener("touchstart", handleTouchStart, { passive: true });
+    container.addEventListener("touchend", handleTouchEnd, { passive: true });
+    container.addEventListener("touchcancel", handleTouchEnd, { passive: true });
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      container.removeEventListener("mousedown", handleMouseDown);
+      container.removeEventListener("mouseenter", handleMouseEnter);
+      container.removeEventListener("mouseleave", handleMouseLeave);
+      container.removeEventListener("mouseup", handleMouseUp);
+      container.removeEventListener("mousemove", handleMouseMove);
+      
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchend", handleTouchEnd);
+      container.removeEventListener("touchcancel", handleTouchEnd);
+    };
+  }, []);
+
   return (
     <section
       id="lineup"
       className="bg-bg-page py-24 border-t border-border-theme relative overflow-hidden select-none"
     >
-      {/* Dynamic Keyframes injected locally */}
+      {/* Dynamic styles injected locally */}
       <style dangerouslySetInnerHTML={{
         __html: `
-        @keyframes productsMarquee {
-          0% {
-            transform: translate3d(0, 0, 0);
-          }
-          100% {
-            transform: translate3d(-50%, 0, 0);
-          }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
         }
-        .animate-products-marquee {
-          display: flex;
-          gap: 2rem;
-          width: max-content;
-          animation: productsMarquee 35s linear infinite;
-          will-change: transform;
-          transform: translate3d(0, 0, 0);
-          backface-visibility: hidden;
-          perspective: 1000px;
-        }
-        .animate-products-marquee:hover {
-          animation-play-state: paused;
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
         .marquee-mask {
           mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
@@ -95,8 +172,12 @@ export default function ProductLineup() {
         </div>
 
         {/* Horizontal Marquee Container with edge fading */}
-        <div className="w-full overflow-hidden py-4 flex marquee-mask">
-          <div className="animate-products-marquee px-[15vw]">
+        <div 
+          ref={containerRef}
+          className="w-full overflow-x-auto py-4 flex marquee-mask no-scrollbar cursor-grab active:cursor-grabbing select-none"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          <div className="flex gap-8 px-[15vw] shrink-0">
             {/* First Set of 6 */}
             {lineupProducts.map((product) => (
               <ProductCard key={`${product.id}-set1`} product={product} />

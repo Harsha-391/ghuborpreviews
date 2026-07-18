@@ -384,7 +384,7 @@ export default function ProfilePage() {
             <div className="flex items-start gap-2.5 bg-bg-page/40 border border-border-theme rounded-xl p-3.5 mt-2">
               <ShieldAlert className="w-4 h-4 text-primary shrink-0 mt-0.5" />
               <div className="text-[9px] text-text-muted leading-normal uppercase">
-                Any discrepancies inside the inscription ledger must be reported via mail to support@gmail.com.
+                Any discrepancies inside the inscription ledger must be reported via mail to support@ghubor.com.
               </div>
             </div>
 

@@ -98,7 +98,7 @@ export default function Footer() {
                 className="w-8 h-8 rounded-full border border-border-theme flex items-center justify-center text-text-muted hover:text-primary hover:border-primary/40 transition-all duration-300">
                 <InstagramIcon />
               </a>
-              <a href="mailto:support@gmail.com" aria-label="Email"
+              <a href="mailto:support@ghubor.com" aria-label="Email"
                 className="w-8 h-8 rounded-full border border-border-theme flex items-center justify-center text-text-muted hover:text-primary hover:border-primary/40 transition-all duration-300">
                 <Mail className="w-3.5 h-3.5" />
               </a>
@@ -156,10 +156,10 @@ export default function Footer() {
             <div className="space-y-5">
               <div>
                 <p className="text-[9px] text-text-dim uppercase tracking-widest font-mono mb-1.5">Inquiries & Orders</p>
-                <a href="mailto:support@gmail.com"
+                <a href="mailto:support@ghubor.com"
                   className="text-[11px] text-text-muted hover:text-primary transition-colors duration-200 font-light inline-flex items-center gap-1.5">
                   <Mail className="w-3 h-3" />
-                  support@gmail.com
+                  support@ghubor.com
                 </a>
               </div>
               <div>
@@ -177,7 +177,7 @@ export default function Footer() {
               </div>
               <div>
                 <p className="text-[9px] text-text-dim uppercase tracking-widest font-mono mb-1.5">Business</p>
-                <p className="text-[11px] text-text-muted font-light leading-relaxed">Collaborations & stockist inquiries: support@gmail.com</p>
+                <p className="text-[11px] text-text-muted font-light leading-relaxed">Collaborations & stockist inquiries: support@ghubor.com</p>
               </div>
             </div>
           </div>

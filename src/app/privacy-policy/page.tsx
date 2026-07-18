@@ -55,7 +55,7 @@ All third parties are bound by their own GDPR/DPDP compliant privacy policies.`,
 — Account data is retained until you request deletion.
 — Analytics data is aggregated and anonymised within 26 months.
 
-To request deletion of your account and associated data, email us at support@gmail.com.`,
+To request deletion of your account and associated data, email us at support@ghubor.com.`,
   },
   {
     heading: "VI. Your Rights",
@@ -67,7 +67,7 @@ To request deletion of your account and associated data, email us at support@gma
 — Withdraw consent for data processing at any time.
 — Lodge a complaint with the Data Protection Board of India if you believe your rights have been violated.
 
-To exercise any of these rights, contact: support@gmail.com`,
+To exercise any of these rights, contact: support@ghubor.com`,
   },
   {
     heading: "VII. Security",
@@ -81,7 +81,7 @@ Despite these measures, no internet transmission is 100% secure. We encourage yo
   },
   {
     heading: "VIII. Children's Privacy",
-    body: `Ghubor does not knowingly collect personal information from individuals under the age of 18. If you believe a minor has provided us with personal information, please contact us immediately at support@gmail.com and we will take steps to remove that information.`,
+    body: `Ghubor does not knowingly collect personal information from individuals under the age of 18. If you believe a minor has provided us with personal information, please contact us immediately at support@ghubor.com and we will take steps to remove that information.`,
   },
   {
     heading: "IX. Changes to This Policy",
@@ -92,7 +92,7 @@ Despite these measures, no internet transmission is 100% secure. We encourage yo
     body: `For privacy-related queries, requests, or complaints:
 
 Unite Fashion
-Email: support@gmail.com
+Email: support@ghubor.com
 Instagram: @ghubor.clothing
 Response time: 24–48 hours on business days (Mon–Sat, 10am–6pm IST).`,
   },

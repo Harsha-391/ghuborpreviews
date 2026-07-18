@@ -124,22 +124,46 @@ export default function CheckoutPage() {
     if (!couponCode.trim()) return;
 
     try {
-      const { db } = await import("../../utils/firebase");
-      const { collection, query, where, getDocs } = await import("firebase/firestore");
-      if (!db) {
-        setCouponError("SANCTUARY OFFLINE.");
-        return;
+      let couponDoc = null;
+      let db = null;
+      try {
+        const firebaseMod = await import("../../utils/firebase");
+        db = firebaseMod.db;
+      } catch (e) {
+        console.warn("Firebase import failed:", e);
       }
 
-      const q = query(collection(db, "cms-coupons"), where("code", "==", couponCode.trim().toUpperCase()));
-      const snap = await getDocs(q);
+      if (db) {
+        try {
+          const { collection, query, where, getDocs } = await import("firebase/firestore");
+          const q = query(collection(db, "cms-coupons"), where("code", "==", couponCode.trim().toUpperCase()));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            couponDoc = snap.docs[0].data();
+          }
+        } catch (firestoreErr) {
+          console.warn("Firestore coupon query failed, trying local storage fallback:", firestoreErr);
+        }
+      }
 
-      if (snap.empty) {
+      // Local storage fallback if coupon was not found via firestore
+      if (!couponDoc && typeof window !== "undefined") {
+        const localCouponsRaw = localStorage.getItem("ghubor-cms-coupons");
+        if (localCouponsRaw) {
+          try {
+            const localCoupons = JSON.parse(localCouponsRaw);
+            couponDoc = localCoupons.find((c: any) => c.code === couponCode.trim().toUpperCase());
+          } catch (e) {
+            console.error("Failed to parse local coupons:", e);
+          }
+        }
+      }
+
+      if (!couponDoc) {
         setCouponError("INVALID Promo CODE.");
         return;
       }
 
-      const couponDoc = snap.docs[0].data();
       if (!couponDoc.active) {
         setCouponError("COUPON IS NO LONGER ACTIVE.");
         return;

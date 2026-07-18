@@ -31,7 +31,7 @@ Refunds are NOT available for:
     heading: "III. Refund Process",
     body: `To initiate a refund request:
 
-1. Email support@gmail.com with subject line: REFUND REQUEST — [Your Order Number]
+1. Email support@ghubor.com with subject line: REFUND REQUEST — [Your Order Number]
 2. Include: your order number, a brief description of the issue, and clear photographs (for defect/damage claims).
 3. Our team will review and respond within 2–3 business days.
 4. If approved, you may be asked to return the item (see Return Policy for shipping instructions).
@@ -63,7 +63,7 @@ We do not offer cash refunds under any circumstances.`,
     body: `If you disagree with our assessment of your refund request, you may escalate by:
 
 — Replying to the original refund email with additional evidence.
-— Contacting us at support@gmail.com marked ESCALATION — [Order Number].
+— Contacting us at support@ghubor.com marked ESCALATION — [Order Number].
 — If unresolved, disputes may be referred to the consumer forum under the Consumer Protection Act, 2019 (India).
 
 We are committed to resolving all disputes fairly and transparently.`,
@@ -108,7 +108,7 @@ export default function RefundPolicyPage() {
             ["Refund Window", "7 days from delivery"],
             ["Processing Time", "7–10 business days"],
             ["Method", "Original payment / Credit"],
-            ["Contact", "support@gmail.com"],
+            ["Contact", "support@ghubor.com"],
           ].map(([label, value]) => (
             <div key={label as string} className="bg-bg-card border border-border-theme rounded-xl p-4">
               <p className="text-[9px] font-mono text-text-dim uppercase tracking-widest mb-1">{label}</p>

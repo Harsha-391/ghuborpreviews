@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Check, Shield, CornerDownRight, HelpCircle, Truck, RefreshCw, Heart } from "lucide-react";
+import { ArrowLeft, Check, Shield, CornerDownRight, HelpCircle, Truck, RefreshCw, Heart, ZoomIn, ZoomOut, RotateCcw, X } from "lucide-react";
 import { products, Product } from "../../../data/products";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
@@ -32,6 +32,63 @@ export default function ProductDetailPage() {
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<"details" | "ritual" | "sizing">("details");
   const [isAddedToCart, setIsAddedToCart] = useState(false);
+
+  // Lightbox & Zoom States
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const initialDistanceRef = useRef<number | null>(null);
+  const initialScaleRef = useRef(1);
+  const touchStartRef = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      isDraggingRef.current = false;
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      initialDistanceRef.current = dist;
+      initialScaleRef.current = scale;
+    } else if (e.touches.length === 1 && scale > 1) {
+      isDraggingRef.current = true;
+      touchStartRef.current = {
+        x: e.touches[0].clientX - position.x,
+        y: e.touches[0].clientY - position.y,
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && initialDistanceRef.current !== null) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const newScale = (dist / initialDistanceRef.current) * initialScaleRef.current;
+      setScale(Math.max(1, Math.min(newScale, 4)));
+    } else if (e.touches.length === 1 && isDraggingRef.current && scale > 1) {
+      const newX = e.touches[0].clientX - touchStartRef.current.x;
+      const newY = e.touches[0].clientY - touchStartRef.current.y;
+      setPosition({ x: newX, y: newY });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    initialDistanceRef.current = null;
+    isDraggingRef.current = false;
+    if (scale <= 1.05) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+    }
+  };
+
+  const resetZoom = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
 
   // Track page + product view
   useEffect(() => {
@@ -197,7 +254,10 @@ export default function ProductDetailPage() {
           {/* LEFT: Image Gallery Section (Cols 1-7) */}
           <div className="lg:col-span-7 flex flex-col md:flex-row-reverse gap-4">
             {/* Active Image Display */}
-            <div className="flex-grow aspect-[4/5] bg-bg-page/40 border border-border-theme rounded-3xl overflow-hidden relative">
+            <div 
+              onClick={() => setIsLightboxOpen(true)}
+              className="flex-grow aspect-[4/5] bg-bg-page/40 border border-border-theme rounded-3xl overflow-hidden relative cursor-zoom-in group/image"
+            >
               {/* Subtle Drop Badge */}
               <div className="absolute top-6 left-6 z-20 flex items-center gap-1.5 bg-bg-page/70 backdrop-blur-md border border-border-theme rounded-full px-3 py-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -218,12 +278,15 @@ export default function ProductDetailPage() {
                 transition={{ duration: 0.5 }}
                 src={activeImage || undefined}
                 alt={galleryImages[activeIndex]?.alt || product.title}
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-center transition-transform duration-500 group-hover/image:scale-102"
               />
             </div>
 
             {/* Thumbnail Navigation List */}
-            <div className="flex md:flex-col gap-3 justify-center md:justify-start">
+            <div 
+              className="flex md:flex-col gap-3 overflow-x-auto md:overflow-x-visible max-w-full pb-2 md:pb-0 justify-start md:justify-start scroll-smooth"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
               {galleryImages.map((imgItem, idx) => (
                 <button
                   key={imgItem.url + "-" + idx}
@@ -549,19 +612,19 @@ export default function ProductDetailPage() {
                   </p>
 
                   {/* Measurement table */}
-                  <div className="border border-border-theme rounded-xl overflow-hidden bg-bg-card">
-                    <table className="w-full text-left font-mono text-xs">
+                  <div className="border border-border-theme rounded-xl overflow-x-auto bg-bg-card max-w-full">
+                    <table className="w-full text-left font-mono text-xs min-w-[600px]">
                       <thead>
                         <tr className="bg-bg-page/60 border-b border-border-theme text-text-dim">
-                          <th className="p-4 uppercase tracking-wider font-light">Size Option</th>
-                          {sizeScale[0]?.chest && <th className="p-4 uppercase tracking-wider font-light">Chest Width</th>}
-                          {sizeScale[0]?.length && <th className="p-4 uppercase tracking-wider font-light">Garment Length</th>}
-                          {sizeScale[0]?.acrossShoulder && <th className="p-4 uppercase tracking-wider font-light">Across Shoulder</th>}
-                          {sizeScale[0]?.sleeve && <th className="p-4 uppercase tracking-wider font-light">Sleeve Length</th>}
-                          {sizeScale[0]?.bottom && <th className="p-4 uppercase tracking-wider font-light">Bottom</th>}
-                          {sizeScale[0]?.neckline && <th className="p-4 uppercase tracking-wider font-light">Neckline</th>}
-                          {sizeScale[0]?.waist && <th className="p-4 uppercase tracking-wider font-light">Waist Circumference</th>}
-                          {sizeScale[0]?.inseam && <th className="p-4 uppercase tracking-wider font-light">Inseam Length</th>}
+                          <th className="p-4 uppercase tracking-wider font-light whitespace-nowrap">Size Option</th>
+                          {sizeScale[0]?.chest && <th className="p-4 uppercase tracking-wider font-light whitespace-nowrap">Chest Width</th>}
+                          {sizeScale[0]?.length && <th className="p-4 uppercase tracking-wider font-light whitespace-nowrap">Garment Length</th>}
+                          {sizeScale[0]?.acrossShoulder && <th className="p-4 uppercase tracking-wider font-light whitespace-nowrap">Across Shoulder</th>}
+                          {sizeScale[0]?.sleeve && <th className="p-4 uppercase tracking-wider font-light whitespace-nowrap">Sleeve Length</th>}
+                          {sizeScale[0]?.bottom && <th className="p-4 uppercase tracking-wider font-light whitespace-nowrap">Bottom</th>}
+                          {sizeScale[0]?.neckline && <th className="p-4 uppercase tracking-wider font-light whitespace-nowrap">Neckline</th>}
+                          {sizeScale[0]?.waist && <th className="p-4 uppercase tracking-wider font-light whitespace-nowrap">Waist Circumference</th>}
+                          {sizeScale[0]?.inseam && <th className="p-4 uppercase tracking-wider font-light whitespace-nowrap">Inseam Length</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border-theme">
@@ -572,18 +635,18 @@ export default function ProductDetailPage() {
                               selectedSize === row.size ? "bg-primary/10 text-primary font-semibold" : "text-text-muted"
                             }`}
                           >
-                            <td className="p-4 flex items-center gap-2">
+                            <td className="p-4 flex items-center gap-2 whitespace-nowrap">
                               {selectedSize === row.size && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
                               {row.size}
                             </td>
-                            {row.chest && <td className="p-4">{row.chest}</td>}
-                            {row.length && <td className="p-4">{row.length}</td>}
-                            {row.acrossShoulder && <td className="p-4">{row.acrossShoulder}</td>}
-                            {row.sleeve && <td className="p-4">{row.sleeve}</td>}
-                            {row.bottom && <td className="p-4">{row.bottom}</td>}
-                            {row.neckline && <td className="p-4">{row.neckline}</td>}
-                            {row.waist && <td className="p-4">{row.waist}</td>}
-                            {row.inseam && <td className="p-4">{row.inseam}</td>}
+                            {row.chest && <td className="p-4 whitespace-nowrap">{row.chest}</td>}
+                            {row.length && <td className="p-4 whitespace-nowrap">{row.length}</td>}
+                            {row.acrossShoulder && <td className="p-4 whitespace-nowrap">{row.acrossShoulder}</td>}
+                            {row.sleeve && <td className="p-4 whitespace-nowrap">{row.sleeve}</td>}
+                            {row.bottom && <td className="p-4 whitespace-nowrap">{row.bottom}</td>}
+                            {row.neckline && <td className="p-4 whitespace-nowrap">{row.neckline}</td>}
+                            {row.waist && <td className="p-4 whitespace-nowrap">{row.waist}</td>}
+                            {row.inseam && <td className="p-4 whitespace-nowrap">{row.inseam}</td>}
                           </tr>
                         ))}
                       </tbody>
@@ -597,6 +660,104 @@ export default function ProductDetailPage() {
 
       </main>
       <Footer />
+
+      {/* Lightbox Modal with Pinch-to-Zoom */}
+      <AnimatePresence>
+        {isLightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[2000] bg-black/95 flex flex-col items-center justify-center p-4 touch-none select-none"
+          >
+            {/* Header controls */}
+            <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-[2010]">
+              <span className="text-[10px] font-mono text-[#DEDBC8]/60 uppercase tracking-widest">
+                {product?.title} — {galleryImages[activeIndex]?.label}
+              </span>
+              
+              <div className="flex items-center gap-3">
+                {/* Control buttons for desktop / backup */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setScale(prev => Math.min(prev + 0.5, 4));
+                  }}
+                  className="p-2 bg-white/5 border border-white/10 hover:border-primary/40 text-text-page rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (scale > 1) {
+                      setScale(prev => Math.max(prev - 0.5, 1));
+                      if (scale <= 1.5) {
+                        setPosition({ x: 0, y: 0 });
+                      }
+                    }
+                  }}
+                  className="p-2 bg-white/5 border border-white/10 hover:border-primary/40 text-text-page rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    resetZoom();
+                  }}
+                  className="p-2 bg-white/5 border border-white/10 hover:border-primary/40 text-text-page rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Reset Zoom"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setIsLightboxOpen(false);
+                    resetZoom();
+                  }}
+                  className="p-2 bg-primary text-bg-page border border-primary/20 rounded-full hover:bg-primary/95 transition-colors cursor-pointer ml-2"
+                  title="Close Full View"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Image display container */}
+            <div 
+              className="relative w-full max-w-4xl aspect-[4/5] overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing"
+              onClick={(e) => {
+                if (e.target === e.currentTarget && scale === 1) {
+                  setIsLightboxOpen(false);
+                }
+              }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <motion.img
+                src={activeImage || undefined}
+                alt={galleryImages[activeIndex]?.alt || product?.title}
+                className="w-full h-full object-contain pointer-events-none"
+                style={{
+                  transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
+                  transition: isDraggingRef.current || initialDistanceRef.current !== null ? "none" : "transform 0.2s ease-out"
+                }}
+              />
+            </div>
+
+            {/* Hint / Instructions for gestures */}
+            <div className="absolute bottom-6 text-center z-[2010] pointer-events-none">
+              <p className="text-[9px] font-mono text-[#DEDBC8]/40 uppercase tracking-widest">
+                Pinch in/out to Zoom · Drag to Move · Tap background to Exit
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

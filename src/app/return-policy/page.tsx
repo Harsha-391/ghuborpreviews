@@ -30,7 +30,7 @@ Returns will be REJECTED if:
     heading: "III. How to Initiate a Return",
     body: `To begin the return process:
 
-1. Email support@gmail.com with subject: RETURN REQUEST — [Order Number]
+1. Email support@ghubor.com with subject: RETURN REQUEST — [Order Number]
 2. Include: your order number, reason for return, and photographs of the item showing its current condition.
 3. Our team will review within 2–3 business days and, if approved, issue a Return Authorization Number (RAN).
 4. Pack the garment securely. Write the RAN clearly on the outside of the package.
@@ -118,7 +118,7 @@ export default function ReturnPolicyPage() {
             ["Return Window", "7 days from delivery"],
             ["Condition", "Unworn, tags attached"],
             ["Exchange", "Subject to availability"],
-            ["Contact", "support@gmail.com"],
+            ["Contact", "support@ghubor.com"],
           ].map(([label, value]) => (
             <div key={label as string} className="bg-bg-card border border-border-theme rounded-xl p-4">
               <p className="text-[9px] font-mono text-text-dim uppercase tracking-widest mb-1">{label}</p>

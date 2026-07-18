@@ -62,7 +62,7 @@ International orders are shipped via DHL, FedEx, or Aramex depending on destinat
     body: `If your parcel arrives visibly damaged:
 
 — Accept the package but photograph the damage immediately before opening.
-— Email support@gmail.com within 48 hours of delivery with photos of the packaging and the damaged item.
+— Email support@ghubor.com within 48 hours of delivery with photos of the packaging and the damaged item.
 — We will file a claim with the courier and, upon resolution, dispatch a replacement or issue a full refund.
 
 If tracking shows "Delivered" but you did not receive the package:
@@ -87,7 +87,7 @@ If tracking shows "Delivered" but you did not receive the package:
     heading: "X. Contact for Shipping Queries",
     body: `For any shipping-related queries:
 
-Email: support@gmail.com
+Email: support@ghubor.com
 Subject format: SHIPPING — [Your Order Number]
 Response time: Within 24–48 hours (Mon–Sat, 10am–6pm IST).
 
