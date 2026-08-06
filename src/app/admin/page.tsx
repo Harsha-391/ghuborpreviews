@@ -19,7 +19,7 @@ import {
   fetchProducts, saveProduct, deleteProduct, createEmptyProduct,
   fetchBlogPosts, saveBlogPost, deleteBlogPost, createEmptyBlogPost,
   fetchCategories, saveCategory, deleteCategory, createEmptyCategory,
-  fetchCoupons, saveCoupon, deleteCoupon
+  fetchCoupons, saveCoupon, deleteCoupon, isCouponCurrentlyActive
 } from "../../utils/cms";
 import {
   fetchAnalyticsSummary, fetchOrders, getTopProducts, getTopSearches,
@@ -868,10 +868,34 @@ function ImagesTab({ formState, setFormState, handleSave, handleLoadPresets, han
 
 // ─── COUPONS TAB ──────────────────────────────────────────────────────────────
 
+function formatCouponWindow(coupon: CMSCoupon): string {
+  const live = isCouponCurrentlyActive(coupon);
+  if (!coupon.active) return "Disabled";
+  if (coupon.startDate && Date.now() < coupon.startDate) {
+    return `Scheduled · Starts ${new Date(coupon.startDate).toLocaleDateString()}`;
+  }
+  if (!live && coupon.endDate) {
+    return `Expired ${new Date(coupon.endDate).toLocaleDateString()}`;
+  }
+  if (coupon.neverExpires) {
+    return coupon.startDate ? `Live since ${new Date(coupon.startDate).toLocaleDateString()} · Never Expires` : "Always Active · Never Expires";
+  }
+  return coupon.endDate ? `Live until ${new Date(coupon.endDate).toLocaleDateString()}` : "Live";
+}
+
+function dateToLocalInputValue(ms: number | null): string {
+  if (!ms) return "";
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function CouponsTab() {
   const [coupons, setCoupons] = useState<CMSCoupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<CMSCoupon | null>(null);
+  const [defaultChoice, setDefaultChoice] = useState<boolean | null>(null);
+  const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [search, setSearch] = useState("");
@@ -889,22 +913,43 @@ function CouponsTab() {
 
   const handleSave = async () => {
     if (!editing) return;
+
+    if (defaultChoice === null) {
+      setFormError("Choose Yes or No for Default Coupon.");
+      return;
+    }
+    if (!editing.neverExpires && !editing.endDate) {
+      setFormError("Set an End Date, or mark this coupon as Never Expires.");
+      return;
+    }
+    if (editing.startDate && editing.endDate && editing.endDate <= editing.startDate) {
+      setFormError("End Date must be after Start Date.");
+      return;
+    }
+
+    setFormError("");
+    const toSave: CMSCoupon = { ...editing, isDefault: defaultChoice };
+
     setSaving(true);
-    await saveCoupon(editing);
+    await saveCoupon(toSave);
     setSaved(true);
     setCoupons(prev => {
-      const idx = prev.findIndex(c => c.id === editing.id);
+      const idx = prev.findIndex(c => c.id === toSave.id);
+      const cleared = toSave.isDefault
+        ? prev.map(c => (c.id === toSave.id ? c : { ...c, isDefault: false }))
+        : prev;
       if (idx > -1) {
-        const n = [...prev];
-        n[idx] = editing;
+        const n = [...cleared];
+        n[idx] = toSave;
         return n;
       }
-      return [editing, ...prev];
+      return [toSave, ...cleared];
     });
     setTimeout(() => {
       setSaving(false);
       setSaved(false);
       setEditing(null);
+      setDefaultChoice(null);
     }, 1500);
   };
 
@@ -915,6 +960,8 @@ function CouponsTab() {
   };
 
   const createNew = () => {
+    setFormError("");
+    setDefaultChoice(null);
     setEditing({
       id: `coupon-${Date.now()}`,
       code: "",
@@ -922,8 +969,18 @@ function CouponsTab() {
       value: 10,
       minAmount: 0,
       active: true,
+      isDefault: false,
+      neverExpires: false,
+      startDate: null,
+      endDate: null,
       createdAt: Date.now()
     });
+  };
+
+  const openForEdit = (coupon: CMSCoupon) => {
+    setFormError("");
+    setDefaultChoice(coupon.isDefault);
+    setEditing(coupon);
   };
 
   if (loading) {
@@ -970,10 +1027,15 @@ function CouponsTab() {
                 className="bg-bg-card border border-border-theme rounded-2xl p-5 flex items-center justify-between gap-4 hover:border-primary/20 transition-all"
               >
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono text-sm font-bold text-text-page tracking-wider uppercase bg-bg-page border border-border-theme rounded px-2 py-0.5">
                       {coupon.code}
                     </span>
+                    {coupon.isDefault && (
+                      <span className="text-[8px] font-mono tracking-widest uppercase bg-primary/15 text-primary border border-primary/30 px-1.5 py-0.5 rounded">
+                        DEFAULT
+                      </span>
+                    )}
                     {!coupon.active && (
                       <span className="text-[8px] font-mono tracking-widest uppercase bg-red-950/20 text-red-400 border border-red-900/30 px-1.5 py-0.5 rounded">
                         DRAFT
@@ -981,14 +1043,17 @@ function CouponsTab() {
                     )}
                   </div>
                   <p className="text-[10px] font-mono text-text-muted mt-2 uppercase tracking-wide">
-                    {coupon.type === "percentage" ? `${coupon.value}% Discount` : `₹${coupon.value} Off`} 
+                    {coupon.type === "percentage" ? `${coupon.value}% Discount` : `₹${coupon.value} Off`}
                     {coupon.minAmount > 0 && ` • Min Order: ₹${coupon.minAmount}`}
+                  </p>
+                  <p className="text-[9px] font-mono text-primary/70 mt-1 uppercase tracking-wide">
+                    {formatCouponWindow(coupon)}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={() => setEditing(coupon)}
+                    onClick={() => openForEdit(coupon)}
                     className="p-2.5 rounded-lg border border-border-theme hover:border-primary text-text-muted hover:text-primary transition-colors cursor-pointer bg-bg-card-alt"
                   >
                     <Settings className="w-3.5 h-3.5" />
@@ -1073,6 +1138,7 @@ function CouponsTab() {
               </div>
               <button
                 type="button"
+                aria-label="Toggle Active Status"
                 onClick={() => setEditing({ ...editing, active: !editing.active })}
                 className="text-primary hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none"
               >
@@ -1084,10 +1150,98 @@ function CouponsTab() {
               </button>
             </div>
 
+            {/* Default Coupon — required choice */}
+            <div className="flex flex-col gap-2 p-3 border border-border-theme rounded-xl bg-bg-page/20">
+              <div>
+                <span className="text-[10px] font-mono text-text-page uppercase tracking-wide block">
+                  Default Coupon? <span className="text-primary">*required</span>
+                </span>
+                <span className="text-[8px] font-mono text-text-muted uppercase tracking-wider leading-relaxed block mt-0.5">
+                  Auto-applies at checkout. Saving as default un-sets any other default coupon.
+                </span>
+              </div>
+              <div className="flex gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setDefaultChoice(true)}
+                  className={`flex-1 py-2.5 rounded-lg font-mono text-[10px] tracking-widest uppercase transition-colors cursor-pointer border ${
+                    defaultChoice === true
+                      ? "bg-primary text-bg-page border-primary font-semibold"
+                      : "bg-transparent text-text-muted border-border-theme hover:border-primary/50"
+                  }`}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDefaultChoice(false)}
+                  className={`flex-1 py-2.5 rounded-lg font-mono text-[10px] tracking-widest uppercase transition-colors cursor-pointer border ${
+                    defaultChoice === false
+                      ? "bg-primary text-bg-page border-primary font-semibold"
+                      : "bg-transparent text-text-muted border-border-theme hover:border-primary/50"
+                  }`}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+
+            {/* Scheduling / Active Window */}
+            <div className="flex flex-col gap-3 p-3 border border-border-theme rounded-xl bg-bg-page/20">
+              <span className="text-[10px] font-mono text-text-page uppercase tracking-wide flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-primary" /> Active Window
+              </span>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Start Date (optional)</label>
+                <input
+                  type="datetime-local"
+                  value={dateToLocalInputValue(editing.startDate)}
+                  onChange={e => setEditing({ ...editing, startDate: e.target.value ? new Date(e.target.value).getTime() : null })}
+                  className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-xs font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">Never Expires</span>
+                <button
+                  type="button"
+                  aria-label="Toggle Never Expires"
+                  onClick={() => setEditing({ ...editing, neverExpires: !editing.neverExpires, endDate: !editing.neverExpires ? null : editing.endDate })}
+                  className="text-primary hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none"
+                >
+                  {editing.neverExpires ? (
+                    <ToggleRight className="w-6 h-6 text-primary" />
+                  ) : (
+                    <ToggleLeft className="w-6 h-6 text-text-dim" />
+                  )}
+                </button>
+              </div>
+
+              {!editing.neverExpires && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[9px] font-mono text-text-muted uppercase tracking-widest">End Date</label>
+                  <input
+                    type="datetime-local"
+                    value={dateToLocalInputValue(editing.endDate)}
+                    onChange={e => setEditing({ ...editing, endDate: e.target.value ? new Date(e.target.value).getTime() : null })}
+                    className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-xs font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
+                  />
+                </div>
+              )}
+            </div>
+
+            {formError && (
+              <div className="flex items-center gap-2 text-[10px] font-mono text-red-400 uppercase tracking-wide bg-red-950/20 border border-red-900/30 rounded-lg px-3 py-2.5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{formError}</span>
+              </div>
+            )}
+
             <div className="flex gap-3 mt-4">
               <button
                 type="button"
-                onClick={() => setEditing(null)}
+                onClick={() => { setEditing(null); setDefaultChoice(null); setFormError(""); }}
                 className="flex-1 bg-transparent hover:bg-bg-card-alt border border-border-theme text-text-muted font-mono text-xs py-3.5 rounded-full transition-colors cursor-pointer uppercase bg-transparent"
               >
                 Cancel

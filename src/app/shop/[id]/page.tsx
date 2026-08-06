@@ -4,13 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Check, Shield, CornerDownRight, HelpCircle, Truck, RefreshCw, Heart, ZoomIn, ZoomOut, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Check, Shield, CornerDownRight, HelpCircle, Truck, RefreshCw, Heart, ZoomIn, ZoomOut, RotateCcw, X, Tag } from "lucide-react";
 import { products, Product } from "../../../data/products";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import { toggleWishlist, isInWishlist, addToCart } from "../../../utils/store";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../utils/firebase";
+import { fetchActiveCoupons, CMSCoupon } from "../../../utils/cms";
 import { useImageConfig } from "../../../components/ImageConfigContext";
 import { trackPageView, trackProductView } from "../../../utils/analytics";
 import { useTheme } from "../../../components/ThemeContext";
@@ -98,6 +99,11 @@ export default function ProductDetailPage() {
     }
   }, [id]);
   const [wishlisted, setWishlisted] = useState(false);
+  const [activeCoupons, setActiveCoupons] = useState<CMSCoupon[]>([]);
+
+  useEffect(() => {
+    fetchActiveCoupons().then(setActiveCoupons);
+  }, []);
 
   // Fetch from Firestore
   useEffect(() => {
@@ -351,6 +357,26 @@ export default function ProductDetailPage() {
                   Duties & taxes included. Shipping computed at ritual checkout.
                 </span>
               </div>
+
+              {/* Active Coupon Strip */}
+              {activeCoupons.length > 0 && (
+                <div className="flex flex-col gap-1.5 mt-4">
+                  {activeCoupons.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 text-[10px] font-mono text-primary"
+                    >
+                      <Tag className="w-3.5 h-3.5 shrink-0" />
+                      <span>
+                        USE CODE <span className="font-bold">{c.code}</span> FOR{" "}
+                        {c.type === "percentage" ? `${c.value}% OFF` : `₹${c.value} OFF`}
+                        {c.minAmount > 0 && ` ON ORDERS ₹${c.minAmount}+`}
+                        {c.isDefault && <span className="text-text-muted"> (auto-applied at checkout)</span>}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quick Summary */}

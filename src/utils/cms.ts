@@ -344,7 +344,40 @@ export interface CMSCoupon {
   value: number;
   minAmount: number;
   active: boolean;
+  /** Auto-applies at checkout. Only one coupon may be default at a time. */
+  isDefault: boolean;
+  /** When true, endDate is ignored and the coupon never expires. */
+  neverExpires: boolean;
+  /** Epoch ms. null = active immediately. */
+  startDate: number | null;
+  /** Epoch ms. null/ignored when neverExpires is true. */
+  endDate: number | null;
   createdAt: number;
+}
+
+/** Fills in defaults for coupons written before the scheduling fields existed. */
+function normalizeCoupon(raw: any): CMSCoupon {
+  return {
+    id: raw.id,
+    code: raw.code,
+    type: raw.type,
+    value: raw.value,
+    minAmount: raw.minAmount ?? 0,
+    active: raw.active ?? true,
+    isDefault: raw.isDefault ?? false,
+    neverExpires: raw.neverExpires ?? true,
+    startDate: raw.startDate ?? null,
+    endDate: raw.endDate ?? null,
+    createdAt: raw.createdAt,
+  };
+}
+
+export function isCouponCurrentlyActive(coupon: CMSCoupon): boolean {
+  if (!coupon.active) return false;
+  const now = Date.now();
+  if (coupon.startDate && now < coupon.startDate) return false;
+  if (!coupon.neverExpires && coupon.endDate && now > coupon.endDate) return false;
+  return true;
 }
 
 export async function fetchCoupons(): Promise<CMSCoupon[]> {
@@ -352,7 +385,7 @@ export async function fetchCoupons(): Promise<CMSCoupon[]> {
   try {
     const q = query(collection(db, "cms-coupons"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
-    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() } as CMSCoupon));
+    const items = snap.docs.map((d) => normalizeCoupon({ id: d.id, ...d.data() }));
     setLocalCoupons(items);
     return items;
   } catch (err) {
@@ -361,7 +394,13 @@ export async function fetchCoupons(): Promise<CMSCoupon[]> {
   }
 }
 
-export async function saveCoupon(coupon: CMSCoupon): Promise<void> {
+export async function fetchActiveCoupons(): Promise<CMSCoupon[]> {
+  const all = await fetchCoupons();
+  return all.filter(isCouponCurrentlyActive);
+}
+
+/** Writes a coupon as-is, without touching any other coupon's default flag. */
+async function persistCouponRaw(coupon: CMSCoupon): Promise<void> {
   if (!db) {
     upsertLocalItem("ghubor-cms-coupons", coupon);
     return;
@@ -374,6 +413,19 @@ export async function saveCoupon(coupon: CMSCoupon): Promise<void> {
     console.error("saveCoupon failed:", err);
     upsertLocalItem("ghubor-cms-coupons", coupon);
   }
+}
+
+async function clearOtherDefaultCoupons(exceptId: string): Promise<void> {
+  const all = await fetchCoupons();
+  const others = all.filter((c) => c.isDefault && c.id !== exceptId);
+  await Promise.all(others.map((c) => persistCouponRaw({ ...c, isDefault: false })));
+}
+
+export async function saveCoupon(coupon: CMSCoupon): Promise<void> {
+  if (coupon.isDefault) {
+    await clearOtherDefaultCoupons(coupon.id);
+  }
+  await persistCouponRaw(coupon);
 }
 
 export async function deleteCoupon(id: string): Promise<void> {
@@ -393,7 +445,8 @@ export async function deleteCoupon(id: string): Promise<void> {
 function getLocalCoupons(): CMSCoupon[] {
   if (typeof window === "undefined") return [];
   const s = localStorage.getItem("ghubor-cms-coupons");
-  return s ? JSON.parse(s) : [];
+  const items = s ? JSON.parse(s) : [];
+  return items.map(normalizeCoupon);
 }
 
 function setLocalCoupons(items: CMSCoupon[]) {

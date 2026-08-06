@@ -12,6 +12,8 @@ import { getCart } from "../../utils/store";
 import { useAuth } from "../../components/AuthContext";
 import WaxSeal from "../../components/WaxSeal";
 import { db } from "../../utils/firebase";
+import { fetchCoupons, isCouponCurrentlyActive, CMSCoupon } from "../../utils/cms";
+import { Tag } from "lucide-react";
 
 interface DisplayCartItem {
   product: Product;
@@ -106,97 +108,81 @@ export default function CheckoutPage() {
     return parseInt(priceStr.replace(/[^0-9]/g, ""), 10);
   };
 
+  const [coupons, setCoupons] = useState<CMSCoupon[]>([]);
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<CMSCoupon | null>(null);
   const [couponError, setCouponError] = useState("");
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [defaultDismissed, setDefaultDismissed] = useState(false);
 
   useEffect(() => {
     localStorage.removeItem("ghubor-applied-coupon");
+    fetchCoupons().then(setCoupons);
   }, []);
 
   const subtotal = cartItems.reduce((acc, item) => acc + parsePrice(item.product.price) * item.qty, 0);
   const shipping = 0;
   const total = Math.max(0, subtotal - discountAmount + shipping);
 
-  const handleApplyCoupon = async () => {
+  const applyCouponToState = (coupon: CMSCoupon) => {
+    const discount = coupon.type === "percentage"
+      ? Math.round((subtotal * coupon.value) / 100)
+      : coupon.value;
+
+    setDiscountAmount(discount);
+    setAppliedCoupon(coupon);
+
+    localStorage.setItem("ghubor-applied-coupon", JSON.stringify({
+      code: coupon.code,
+      discount,
+      type: coupon.type,
+      value: coupon.value
+    }));
+  };
+
+  // Auto-apply the default coupon (if any) once coupons + cart total are known
+  useEffect(() => {
+    if (appliedCoupon || defaultDismissed || coupons.length === 0 || subtotal === 0) return;
+
+    const defaultCoupon = coupons.find((c) => c.isDefault && isCouponCurrentlyActive(c));
+    if (!defaultCoupon) return;
+    if (defaultCoupon.minAmount && subtotal < defaultCoupon.minAmount) return;
+
+    applyCouponToState(defaultCoupon);
+  }, [coupons, subtotal, appliedCoupon, defaultDismissed]);
+
+  const otherActiveCoupons = coupons.filter(
+    (c) => isCouponCurrentlyActive(c) && !c.isDefault && c.id !== appliedCoupon?.id
+  );
+
+  const handleApplyCoupon = () => {
     setCouponError("");
     if (!couponCode.trim()) return;
 
-    try {
-      let couponDoc = null;
-      let db = null;
-      try {
-        const firebaseMod = await import("../../utils/firebase");
-        db = firebaseMod.db;
-      } catch (e) {
-        console.warn("Firebase import failed:", e);
-      }
+    const match = coupons.find((c) => c.code === couponCode.trim().toUpperCase());
 
-      if (db) {
-        try {
-          const { collection, query, where, getDocs } = await import("firebase/firestore");
-          const q = query(collection(db, "cms-coupons"), where("code", "==", couponCode.trim().toUpperCase()));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            couponDoc = snap.docs[0].data();
-          }
-        } catch (firestoreErr) {
-          console.warn("Firestore coupon query failed, trying local storage fallback:", firestoreErr);
-        }
-      }
-
-      // Local storage fallback if coupon was not found via firestore
-      if (!couponDoc && typeof window !== "undefined") {
-        const localCouponsRaw = localStorage.getItem("ghubor-cms-coupons");
-        if (localCouponsRaw) {
-          try {
-            const localCoupons = JSON.parse(localCouponsRaw);
-            couponDoc = localCoupons.find((c: any) => c.code === couponCode.trim().toUpperCase());
-          } catch (e) {
-            console.error("Failed to parse local coupons:", e);
-          }
-        }
-      }
-
-      if (!couponDoc) {
-        setCouponError("INVALID Promo CODE.");
-        return;
-      }
-
-      if (!couponDoc.active) {
-        setCouponError("COUPON IS NO LONGER ACTIVE.");
-        return;
-      }
-
-      if (couponDoc.minAmount && subtotal < couponDoc.minAmount) {
-        setCouponError(`MINIMUM PURCHASE IS ₹${couponDoc.minAmount}.`);
-        return;
-      }
-
-      let discount = 0;
-      if (couponDoc.type === "percentage") {
-        discount = Math.round((subtotal * couponDoc.value) / 100);
-      } else {
-        discount = couponDoc.value;
-      }
-
-      setDiscountAmount(discount);
-      setAppliedCoupon(couponDoc);
-
-      localStorage.setItem("ghubor-applied-coupon", JSON.stringify({
-        code: couponDoc.code,
-        discount,
-        type: couponDoc.type,
-        value: couponDoc.value
-      }));
-    } catch (err) {
-      console.error(err);
-      setCouponError("FAILED TO APPLY Promo.");
+    if (!match) {
+      setCouponError("INVALID PROMO CODE.");
+      return;
     }
+
+    if (!isCouponCurrentlyActive(match)) {
+      setCouponError("COUPON IS NOT CURRENTLY ACTIVE.");
+      return;
+    }
+
+    if (match.minAmount && subtotal < match.minAmount) {
+      setCouponError(`MINIMUM PURCHASE IS ₹${match.minAmount}.`);
+      return;
+    }
+
+    applyCouponToState(match);
   };
 
   const handleRemoveCoupon = () => {
+    if (appliedCoupon?.isDefault) {
+      setDefaultDismissed(true);
+    }
     setAppliedCoupon(null);
     setDiscountAmount(0);
     setCouponCode("");
@@ -230,7 +216,7 @@ export default function CheckoutPage() {
       <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
         {/* Header */}
         <div className="text-center mb-16">
-          <span className="text-primary text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase block mb-3 animate-pulse">
+          <span className="text-primary text-xs sm:text-sm font-mono font-bold tracking-[0.3em] uppercase block mb-3 animate-pulse">
             ACQUISITION SECURE
           </span>
           <h1 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-text-page font-light tracking-wide leading-none">
@@ -242,12 +228,12 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-5xl mx-auto">
           {/* LEFT: Shipping Form (Col 1-7) */}
           <form onSubmit={handleSubmit} className="lg:col-span-7 bg-bg-card border border-border-theme rounded-2xl p-6 sm:p-8 flex flex-col gap-5 shadow-sm">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-primary border-b border-border-theme pb-3">
+            <h2 className="text-sm sm:text-base font-mono font-bold uppercase tracking-widest text-primary border-b border-border-theme pb-3">
               Shipping Destination
             </h2>
 
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Full Name</label>
+              <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">Full Name</label>
               <input
                 type="text"
                 name="name"
@@ -255,13 +241,13 @@ export default function CheckoutPage() {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="GIBBOR WARRIOR"
-                className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-xs font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
+                className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-sm sm:text-base font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Email Address</label>
+                <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">Email Address</label>
                 <input
                   type="email"
                   name="email"
@@ -269,11 +255,11 @@ export default function CheckoutPage() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="RITUAL@EMAIL.COM"
-                  className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-xs font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
+                  className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-sm sm:text-base font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Phone Number</label>
+                <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">Phone Number</label>
                 <input
                   type="tel"
                   name="phone"
@@ -281,13 +267,13 @@ export default function CheckoutPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+91 XXXXX XXXXX"
-                  className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-xs font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
+                  className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-sm sm:text-base font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Street Address</label>
+              <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">Street Address</label>
               <textarea
                 name="address"
                 required
@@ -295,13 +281,13 @@ export default function CheckoutPage() {
                 value={formData.address}
                 onChange={handleChange}
                 placeholder="SANCTUARY WING, HOUSE NO, STREET"
-                className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-xs font-mono text-text-page outline-none focus:border-primary/50 transition-colors resize-none"
+                className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-sm sm:text-base font-mono text-text-page outline-none focus:border-primary/50 transition-colors resize-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-mono text-text-muted uppercase tracking-widest">City / State</label>
+                <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">City / State</label>
                 <input
                   type="text"
                   name="city"
@@ -309,11 +295,11 @@ export default function CheckoutPage() {
                   value={formData.city}
                   onChange={handleChange}
                   placeholder="MUMBAI, MH"
-                  className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-xs font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
+                  className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-sm sm:text-base font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-mono text-text-muted uppercase tracking-widest">Postal / ZIP Code</label>
+                <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">Postal / ZIP Code</label>
                 <input
                   type="text"
                   name="zip"
@@ -321,17 +307,17 @@ export default function CheckoutPage() {
                   value={formData.zip}
                   onChange={handleChange}
                   placeholder="400001"
-                  className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-xs font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
+                  className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-sm sm:text-base font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-primary/90 text-bg-page font-mono font-medium text-xs tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase font-semibold mt-4 shadow-md hover:shadow-primary/10"
+              className="w-full bg-primary hover:bg-primary/90 text-bg-page font-mono text-sm sm:text-base tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase font-bold mt-4 shadow-md hover:shadow-primary/10"
             >
               <span>CONTINUE TO PAYMENT</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-5 h-5" />
             </button>
           </form>
 
@@ -342,7 +328,7 @@ export default function CheckoutPage() {
               <WaxSeal size={70} />
             </div>
 
-            <h2 className="text-xs font-mono uppercase tracking-widest text-primary border-b border-border-theme pb-3">
+            <h2 className="text-sm sm:text-base font-mono font-bold uppercase tracking-widest text-primary border-b border-border-theme pb-3">
               Order Review
             </h2>
 
@@ -354,74 +340,102 @@ export default function CheckoutPage() {
                     <img src={item.product.image} alt="" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-grow min-w-0">
-                    <h3 className="text-[11px] font-semibold text-text-page truncate uppercase tracking-wider">{item.product.title}</h3>
-                    <p className="text-[9px] text-text-muted font-mono mt-0.5">SIZE: {item.size} / QTY: {item.qty}</p>
+                    <h3 className="text-sm font-bold text-text-page truncate uppercase tracking-wider">{item.product.title}</h3>
+                    <p className="text-xs text-text-muted font-mono font-semibold mt-0.5">SIZE: {item.size} / QTY: {item.qty}</p>
                   </div>
-                  <span className="text-[11px] font-mono text-primary shrink-0">{item.product.price}</span>
+                  <span className="text-sm font-mono font-bold text-primary shrink-0">{item.product.price}</span>
                 </div>
               ))}
             </div>
 
             {/* Coupon Promo Input */}
             <div className="border-t border-b border-border-theme py-4 flex flex-col gap-2">
-              <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest block">Apply Coupon</span>
+              <span className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest block">Apply Coupon</span>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   placeholder="COVENANT CODE"
-                  className="flex-grow bg-bg-page/40 border border-border-theme rounded-lg px-3 py-2 text-xs font-mono text-text-page outline-none focus:border-primary/50 transition-colors placeholder:text-text-muted/50 uppercase"
+                  disabled={!!appliedCoupon?.isDefault}
+                  className="flex-grow bg-bg-page/40 border border-border-theme rounded-lg px-3 py-2.5 text-sm font-mono text-text-page outline-none focus:border-primary/50 transition-colors placeholder:text-text-muted/50 uppercase disabled:opacity-40 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
                   onClick={handleApplyCoupon}
-                  className="bg-primary hover:bg-primary/90 text-bg-page text-[10px] font-mono px-4 rounded-lg uppercase tracking-wider transition-colors cursor-pointer border-none"
+                  disabled={!!appliedCoupon?.isDefault}
+                  className="bg-primary hover:bg-primary/90 text-bg-page text-xs sm:text-sm font-mono font-bold px-4 rounded-lg uppercase tracking-wider transition-colors cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Apply
                 </button>
               </div>
               {couponError && (
-                <span className="text-[9px] font-mono text-red-500 uppercase tracking-wider">{couponError}</span>
+                <span className="text-xs font-mono font-semibold text-red-500 uppercase tracking-wider">{couponError}</span>
               )}
               {appliedCoupon && (
-                <div className="flex justify-between items-center bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5 mt-1 font-mono text-[9px] text-primary">
-                  <span>COUPON &quot;{appliedCoupon.code}&quot; ACTIVE</span>
+                <div className="flex justify-between items-center bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 mt-1 font-mono text-xs sm:text-sm font-semibold text-primary">
+                  <span>
+                    COUPON &quot;{appliedCoupon.code}&quot; ACTIVE
+                    {appliedCoupon.isDefault && <span className="text-text-muted font-normal"> (default)</span>}
+                  </span>
                   <button
                     type="button"
                     onClick={handleRemoveCoupon}
-                    className="text-red-500 hover:text-red-400 font-semibold cursor-pointer ml-2 border-none bg-transparent"
+                    className="text-red-500 hover:text-red-400 font-bold cursor-pointer ml-2 border-none bg-transparent"
                   >
                     REMOVE
                   </button>
                 </div>
               )}
+              {appliedCoupon?.isDefault && (
+                <span className="text-[10px] font-mono text-text-muted uppercase tracking-wide">
+                  Remove the default coupon to apply a different code.
+                </span>
+              )}
+
+              {otherActiveCoupons.length > 0 && (
+                <div className="flex flex-col gap-1.5 mt-2">
+                  {otherActiveCoupons.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-2 bg-bg-page/40 border border-border-theme rounded-lg px-3 py-2 text-xs font-mono text-text-muted"
+                    >
+                      <Tag className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span>
+                        Also available: <span className="font-bold text-text-page">{c.code}</span> —{" "}
+                        {c.type === "percentage" ? `${c.value}% OFF` : `₹${c.value} OFF`}
+                        {c.minAmount > 0 && ` on orders ₹${c.minAmount}+`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="flex flex-col gap-3 font-mono text-xs text-text-muted pt-2">
+            <div className="flex flex-col gap-3 font-mono text-sm sm:text-base font-semibold text-text-muted pt-2">
               <div className="flex justify-between">
                 <span>SUBTOTAL:</span>
-                <span className="text-text-page">₹{subtotal.toLocaleString("en-IN")}</span>
+                <span className="text-text-page font-bold">₹{subtotal.toLocaleString("en-IN")}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-primary">
                   <span>DISCOUNT ({appliedCoupon?.code}):</span>
-                  <span>- ₹{discountAmount.toLocaleString("en-IN")}</span>
+                  <span className="font-bold">- ₹{discountAmount.toLocaleString("en-IN")}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span>SHIPPING:</span>
-                <span className="text-primary">FREE (COMP)</span>
+                <span className="text-primary font-bold">FREE (COMP)</span>
               </div>
-              <div className="flex justify-between border-t border-border-theme pt-3 text-sm font-bold text-primary">
-                <span>TOTAL:</span>
+              <div className="flex justify-between items-baseline border-t border-border-theme pt-3 text-xl sm:text-2xl font-extrabold text-primary">
+                <span className="text-sm sm:text-base">TOTAL:</span>
                 <span>₹{total.toLocaleString("en-IN")}</span>
               </div>
             </div>
 
             <div className="flex items-start gap-2.5 bg-bg-page/50 border border-border-theme rounded-xl p-3.5 mt-2">
-              <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-              <div className="text-[10px] text-text-muted leading-normal uppercase">
+              <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              <div className="text-xs sm:text-sm font-semibold text-text-muted leading-normal uppercase">
                 Secure drop channels. All transactions are logged and encrypted.
               </div>
             </div>

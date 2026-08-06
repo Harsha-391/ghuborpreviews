@@ -1,16 +1,24 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
+import { fetchActiveCoupons, CMSCoupon } from "../utils/cms";
+
+function couponToMarqueeText(c: CMSCoupon): string {
+  const discount = c.type === "percentage" ? `${c.value}% OFF` : `₹${c.value} OFF`;
+  const minText = c.minAmount > 0 ? ` ON ORDERS ₹${c.minAmount}+` : "";
+  return `USE CODE ${c.code} FOR ${discount}${minText}`;
+}
 
 export default function MarqueeBanner() {
-  const items = [
-    "LAUNCH35 FOR 35% OFF",
-    "LAUNCH35 FOR 35% OFF",
-    "LAUNCH35 FOR 35% OFF",
-    "LAUNCH35 FOR 35% OFF",
-    "LAUNCH35 FOR 35% OFF",
-    "LAUNCH35 FOR 35% OFF",
-  ];
+  const [items, setItems] = useState<string[]>(["NEW DROPS EVERY WEEK"]);
+
+  useEffect(() => {
+    fetchActiveCoupons().then((coupons) => {
+      if (coupons.length > 0) {
+        setItems(coupons.map(couponToMarqueeText));
+      }
+    });
+  }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [offsetWidth, setOffsetWidth] = useState(0);
@@ -32,7 +40,7 @@ export default function MarqueeBanner() {
     // Re-measure on resize to maintain perfect alignment
     window.addEventListener("resize", measureWidth);
     return () => window.removeEventListener("resize", measureWidth);
-  }, []);
+  }, [items]);
 
   const repeatItems = (
     <div 
