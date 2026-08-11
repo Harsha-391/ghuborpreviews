@@ -166,7 +166,10 @@ export default function PaymentPage() {
             paymentMode,
             paymentId: response.razorpay_payment_id || "simulated_pay",
             shippingAddress,
-            status: paymentMode === "full" ? "paid_preparing" : "deposit_unpaid_balance",
+            // "preparing in dark" is the canonical pending-fulfillment status the
+            // admin's Orders/Shipping tabs filter on — paymentMode + amountDue
+            // already capture whether it was a full payment or a deposit.
+            status: "preparing in dark",
             createdAt: new Date().toISOString(),
           });
         } catch (dbErr) {

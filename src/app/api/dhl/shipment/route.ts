@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+import { verifyAdminRequest } from "../../../../utils/verifyAdmin";
 
 export async function POST(request: Request) {
   try {
+    if (!(await verifyAdminRequest(request))) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
     const body = await request.json();
     
     // 1. Resolve DHL Credentials (payload settings override process.env variables)

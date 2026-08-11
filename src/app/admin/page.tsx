@@ -9,7 +9,8 @@ import {
   Truck, TrendingUp, ShoppingBag, DollarSign, Users, Eye, EyeOff, Mail,
   BarChart2, AlertCircle, Upload, ChevronRight, Clock,
   ArrowUpRight, Layers, Settings, Filter, ExternalLink, Zap, Loader2,
-  Warehouse, Sliders, Clipboard, Edit3, Printer, Download, CheckCircle
+  Warehouse, Sliders, Clipboard, Edit3, Printer, Download, CheckCircle,
+  RotateCcw, Receipt, Ban, BadgeIndianRupee
 } from "lucide-react";
 import { useImageConfig, DEFAULT_IMAGE_CONFIGS, ImageConfigs } from "../../components/ImageConfigContext";
 import { CMSProductImage } from "../../data/products";
@@ -78,6 +79,17 @@ async function ensureLaunchCoupon() {
   } finally {
     launchCouponSeedInFlight = false;
   }
+}
+
+/**
+ * Auth header for admin-only API routes (Razorpay refunds, DHL shipment
+ * creation) — those routes verify this Firebase ID token server-side via
+ * verifyAdminRequest() before touching real money/shipments.
+ */
+async function getAdminAuthHeader(): Promise<Record<string, string>> {
+  const { auth } = await import("../../utils/firebase");
+  const token = await auth?.currentUser?.getIdToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 // ─── DRAG & DROP IMAGE UPLOADER ───────────────────────────────────────────────
@@ -1815,19 +1827,202 @@ function CategoriesTab() {
 
 // ─── ORDERS TAB ───────────────────────────────────────────────────────────────
 
-function OrdersTab() {
+function OrdersTab({ onShipOrder }: { onShipOrder: (orderId: string) => void }) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
   const [search, setSearch] = useState("");
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundError, setRefundError] = useState("");
 
-  useEffect(() => { fetchOrders().then(o => { setOrders(o.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())); setLoading(false); }); }, []);
+  const reloadOrders = async () => {
+    const o = await fetchOrders();
+    const sorted = o.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    setOrders(sorted);
+    setSelected((prev: any) => prev ? (sorted.find((x: any) => x.id === prev.id) || prev) : prev);
+  };
+
+  useEffect(() => { reloadOrders().then(() => setLoading(false)); }, []);
 
   const statusColors: Record<string, string> = {
     "preparing in dark": "text-amber-400 bg-amber-500/10 border-amber-500/20",
     "shipped": "text-sky-400 bg-sky-500/10 border-sky-500/20",
     "delivered": "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     "cancelled": "text-red-400 bg-red-500/10 border-red-500/20",
+    "returned": "text-orange-400 bg-orange-500/10 border-orange-500/20",
+    "refunded": "text-violet-400 bg-violet-500/10 border-violet-500/20",
+  };
+
+  const handleUpdateStatus = async (order: any, status: string) => {
+    setActionBusy(status);
+    try {
+      const { db } = await import("../../utils/firebase");
+      if (!db) throw new Error("Database not configured.");
+      const { doc, updateDoc } = await import("firebase/firestore");
+      await updateDoc(doc(db, "orders", order.id), { status, statusUpdatedAt: Date.now() });
+      await reloadOrders();
+    } catch (e: any) {
+      alert(`Failed to update order status: ${e.message || e}`);
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const handleMarkBalancePaid = async (order: any) => {
+    setActionBusy("paid");
+    try {
+      const { db } = await import("../../utils/firebase");
+      if (!db) throw new Error("Database not configured.");
+      const { doc, updateDoc } = await import("firebase/firestore");
+      await updateDoc(doc(db, "orders", order.id), {
+        amountDue: 0,
+        amountPaid: order.total,
+        balancePaidAt: Date.now(),
+      });
+      await reloadOrders();
+    } catch (e: any) {
+      alert(`Failed to mark balance paid: ${e.message || e}`);
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const openRefund = (order: any) => {
+    const already = order.refundedAmount || 0;
+    const remaining = Math.max(0, (order.amountPaid || 0) - already);
+    setRefundAmount(remaining ? String(remaining) : "");
+    setRefundError("");
+    setRefundOpen(true);
+  };
+
+  const handleRefund = async (order: any) => {
+    const amtRupees = parseFloat(refundAmount);
+    const already = order.refundedAmount || 0;
+    const maxRefundable = (order.amountPaid || 0) - already;
+
+    if (!amtRupees || amtRupees <= 0) {
+      setRefundError("Enter a valid refund amount.");
+      return;
+    }
+    if (amtRupees > maxRefundable) {
+      setRefundError(`Cannot exceed ₹${maxRefundable.toLocaleString("en-IN")} remaining.`);
+      return;
+    }
+    if (!order.paymentId || order.paymentId === "simulated_pay") {
+      setRefundError("This order has no real Razorpay payment on file to refund.");
+      return;
+    }
+    if (!confirm(`Refund ₹${amtRupees.toLocaleString("en-IN")} to the customer via Razorpay? This moves real money and cannot be undone.`)) return;
+
+    setActionBusy("refund");
+    setRefundError("");
+    try {
+      const authHeader = await getAdminAuthHeader();
+      const res = await fetch("/api/razorpay/refund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader },
+        body: JSON.stringify({
+          paymentId: order.paymentId,
+          amount: Math.round(amtRupees * 100),
+          notes: { orderNo: order.orderNo },
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Refund failed.");
+
+      const newRefunded = already + amtRupees;
+      const fullyRefunded = newRefunded >= (order.amountPaid || 0);
+
+      const { db } = await import("../../utils/firebase");
+      if (db) {
+        const { doc, updateDoc } = await import("firebase/firestore");
+        await updateDoc(doc(db, "orders", order.id), {
+          refundedAmount: newRefunded,
+          refundIds: [...(order.refundIds || []), result.refund.id],
+          status: fullyRefunded ? "refunded" : order.status,
+        });
+      }
+      setRefundOpen(false);
+      await reloadOrders();
+    } catch (e: any) {
+      setRefundError(e.message || "Refund failed.");
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const handlePrintReceipt = (order: any) => {
+    const sa = order.shippingAddress || {};
+    const rows = (order.items || []).map((item: any) => `
+      <tr>
+        <td style="padding:8px 0;">${item.title}</td>
+        <td style="padding:8px 0;text-align:center;">${item.size || "—"}</td>
+        <td style="padding:8px 0;text-align:center;">${item.qty}</td>
+        <td style="padding:8px 0;text-align:right;">${item.price}</td>
+      </tr>
+    `).join("");
+
+    const html = `
+      <html>
+        <head>
+          <title>Receipt — ${order.orderNo}</title>
+          <style>
+            body { font-family: 'Courier New', monospace; max-width: 640px; margin: 40px auto; color: #1a1a1a; }
+            h1 { font-size: 20px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+            .muted { color: #666; font-size: 12px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { text-align: left; border-bottom: 1px solid #ccc; padding-bottom: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+            th:nth-child(2), th:nth-child(3) { text-align: center; }
+            th:nth-child(4) { text-align: right; }
+            tr:not(:last-child) td { border-bottom: 1px solid #eee; }
+            .totals { margin-top: 20px; width: 260px; margin-left: auto; }
+            .totals div { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
+            .totals .grand { font-weight: bold; font-size: 16px; border-top: 1px solid #333; margin-top: 6px; padding-top: 8px; }
+            .section { margin-top: 24px; }
+            .section h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 6px; }
+            @media print { body { margin: 10mm; } }
+          </style>
+        </head>
+        <body>
+          <h1>Ghubor</h1>
+          <div class="muted">Order Receipt · ${order.orderNo}</div>
+          <div class="muted">Placed: ${new Date(order.createdAt).toLocaleString()}</div>
+
+          <div class="section">
+            <h2>Ship To</h2>
+            <div>${sa.name || ""}</div>
+            <div>${sa.address || ""}</div>
+            <div>${sa.city || ""}${sa.state ? ", " + sa.state : ""} ${sa.zip || ""}</div>
+            <div>${sa.phone || ""} · ${sa.email || ""}</div>
+          </div>
+
+          <table>
+            <thead><tr><th>Item</th><th>Size</th><th>Qty</th><th>Price</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+
+          <div class="totals">
+            <div><span>Subtotal</span><span>₹${(order.subtotal || 0).toLocaleString("en-IN")}</span></div>
+            ${order.discount ? `<div><span>Discount${order.couponCode ? ` (${order.couponCode})` : ""}</span><span>-₹${order.discount.toLocaleString("en-IN")}</span></div>` : ""}
+            <div class="grand"><span>Total</span><span>₹${(order.total || 0).toLocaleString("en-IN")}</span></div>
+            <div><span>Paid</span><span>₹${(order.amountPaid || 0).toLocaleString("en-IN")}</span></div>
+            ${order.amountDue ? `<div><span>Balance Due</span><span>₹${order.amountDue.toLocaleString("en-IN")}</span></div>` : ""}
+            ${order.refundedAmount ? `<div><span>Refunded</span><span>-₹${order.refundedAmount.toLocaleString("en-IN")}</span></div>` : ""}
+          </div>
+
+          <div class="section muted">Payment ID: ${order.paymentId || "—"} · Status: ${order.status}</div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => printWindow.print();
+    }
   };
 
   const filtered = orders.filter(o =>
@@ -1900,6 +2095,106 @@ function OrdersTab() {
               </div>
             </div>
 
+            <SectionCard title="Quick Actions">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => onShipOrder(selected.id)}
+                  disabled={!!actionBusy}
+                  className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest px-3 py-2 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-colors cursor-pointer disabled:opacity-40"
+                >
+                  <Truck className="w-3.5 h-3.5" /> Ship via DHL
+                </button>
+
+                <button
+                  onClick={() => handleUpdateStatus(selected, "delivered")}
+                  disabled={!!actionBusy}
+                  className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer disabled:opacity-40"
+                >
+                  {actionBusy === "delivered" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />} Mark Delivered
+                </button>
+
+                {selected.amountDue > 0 && (
+                  <button
+                    onClick={() => handleMarkBalancePaid(selected)}
+                    disabled={!!actionBusy}
+                    className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors cursor-pointer disabled:opacity-40"
+                  >
+                    {actionBusy === "paid" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BadgeIndianRupee className="w-3.5 h-3.5" />} Mark Balance Paid
+                  </button>
+                )}
+
+                <button
+                  onClick={() => handleUpdateStatus(selected, "returned")}
+                  disabled={!!actionBusy}
+                  className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest px-3 py-2 rounded-lg border border-orange-500/30 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors cursor-pointer disabled:opacity-40"
+                >
+                  {actionBusy === "returned" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Mark Returned
+                </button>
+
+                <button
+                  onClick={() => openRefund(selected)}
+                  disabled={!!actionBusy || (selected.refundedAmount || 0) >= (selected.amountPaid || 0)}
+                  className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest px-3 py-2 rounded-lg border border-violet-500/30 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors cursor-pointer disabled:opacity-40"
+                >
+                  <DollarSign className="w-3.5 h-3.5" /> Refund
+                </button>
+
+                <button
+                  onClick={() => handleUpdateStatus(selected, "cancelled")}
+                  disabled={!!actionBusy}
+                  className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest px-3 py-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-40"
+                >
+                  {actionBusy === "cancelled" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ban className="w-3.5 h-3.5" />} Cancel Order
+                </button>
+
+                <button
+                  onClick={() => handlePrintReceipt(selected)}
+                  className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest px-3 py-2 rounded-lg border border-border-theme bg-bg-card-alt text-text-page hover:border-primary/40 transition-colors cursor-pointer"
+                >
+                  <Receipt className="w-3.5 h-3.5" /> Print Receipt
+                </button>
+              </div>
+
+              {refundOpen && (
+                <div className="mt-4 p-4 rounded-xl border border-violet-500/30 bg-violet-500/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-violet-400">Refund via Razorpay</p>
+                    <button onClick={() => setRefundOpen(false)} className="text-text-muted hover:text-text-page cursor-pointer bg-transparent border-none"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                  <p className="text-[10px] text-text-dim">
+                    Already refunded: ₹{(selected.refundedAmount || 0).toLocaleString("en-IN")} of ₹{(selected.amountPaid || 0).toLocaleString("en-IN")} paid.
+                  </p>
+                  <div className="flex gap-2 items-center">
+                    <span className="text-xs font-mono text-text-muted">₹</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={refundAmount}
+                      onChange={e => setRefundAmount(e.target.value)}
+                      className="flex-grow min-w-0 bg-bg-page border border-border-theme rounded-lg px-3 py-2 text-sm font-mono text-text-page outline-none focus:border-violet-500/50"
+                    />
+                    <button
+                      onClick={() => handleRefund(selected)}
+                      disabled={actionBusy === "refund"}
+                      className="shrink-0 flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest px-4 py-2 rounded-lg bg-violet-500 text-white hover:bg-violet-600 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {actionBusy === "refund" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Confirm Refund"}
+                    </button>
+                  </div>
+                  {refundError && <p className="text-[10px] font-mono text-red-500">{refundError}</p>}
+                </div>
+              )}
+
+              {selected.trackingNo && (
+                <p className="text-[10px] font-mono text-text-dim mt-3">
+                  DHL AWB: <span className="text-text-page">{selected.trackingNo}</span>
+                  {selected.trackingUrl && (
+                    <a href={selected.trackingUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline ml-2">Track →</a>
+                  )}
+                </p>
+              )}
+            </SectionCard>
+
             <SectionCard title="Customer">
               <div className="grid grid-cols-2 gap-y-3 text-sm">
                 {[
@@ -1953,7 +2248,7 @@ function OrdersTab() {
 
 // ─── SHIPPING TAB ─────────────────────────────────────────────────────────────
 
-function ShippingTab() {
+function ShippingTab({ initialOrderId, onInitialOrderConsumed }: { initialOrderId?: string | null; onInitialOrderConsumed?: () => void }) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -2018,6 +2313,19 @@ function ShippingTab() {
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
+
+  // Jump straight to fulfilling a specific order when arriving via the
+  // Orders tab's "Ship via DHL" quick action.
+  useEffect(() => {
+    if (!initialOrderId || orders.length === 0) return;
+    const match = orders.find((o: any) => o.id === initialOrderId);
+    if (match) {
+      setSelectedOrder(match);
+      setShippingSubTab("fulfillment");
+    }
+    onInitialOrderConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialOrderId, orders]);
 
   // Load Shipping Settings from Firestore
   useEffect(() => {
@@ -2235,7 +2543,7 @@ function ShippingTab() {
 
       const response = await fetch("/api/dhl/shipment", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await getAdminAuthHeader()) },
         body: JSON.stringify({
           apiKey: shippingSettings.dhlApiKey,
           apiSecret: shippingSettings.dhlApiSecret,
@@ -3431,6 +3739,9 @@ export default function AdminPage() {
   };
 
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+  // Set by an Orders "Ship via DHL" quick action to jump into the Shipping
+  // tab with that order already selected for fulfillment.
+  const [shipOrderId, setShipOrderId] = useState<string | null>(null);
   const [formState, setFormState] = useState<ImageConfigs>(() => configs);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [presetLoaded, setPresetLoaded] = useState(false);
@@ -3673,8 +3984,17 @@ export default function AdminPage() {
         {activeTab === "blog" && <BlogTab />}
         {activeTab === "categories" && <CategoriesTab />}
         {activeTab === "coupons" && <CouponsTab />}
-        {activeTab === "orders" && <OrdersTab />}
-        {activeTab === "shipping" && <ShippingTab />}
+        {activeTab === "orders" && (
+          <OrdersTab
+            onShipOrder={(id: string) => {
+              setShipOrderId(id);
+              setActiveTab("shipping");
+            }}
+          />
+        )}
+        {activeTab === "shipping" && (
+          <ShippingTab initialOrderId={shipOrderId} onInitialOrderConsumed={() => setShipOrderId(null)} />
+        )}
       </main>
     </div>
   );
