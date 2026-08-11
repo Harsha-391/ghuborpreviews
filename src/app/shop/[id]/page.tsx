@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, Shield, CornerDownRight, HelpCircle, Truck, RefreshCw, Heart, ZoomIn, ZoomOut, RotateCcw, X, Tag } from "lucide-react";
 import { products, Product } from "../../../data/products";
 import Navbar from "../../../components/Navbar";
+import MarqueeBanner from "../../../components/MarqueeBanner";
 import Footer from "../../../components/Footer";
 import { toggleWishlist, isInWishlist, addToCart } from "../../../utils/store";
 import { doc, getDoc } from "firebase/firestore";
@@ -114,6 +115,7 @@ export default function ProductDetailPage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
+          if (data.published === false) return; // draft — keep showing the static fallback, if any
           setProduct({
             id: docSnap.id,
             ...data,
@@ -249,6 +251,9 @@ export default function ProductDetailPage() {
       {/* Red ambient glows */}
       <div className="absolute top-[20%] left-[-15%] w-[400px] h-[400px] bg-red-950/15 rounded-full blur-[140px] pointer-events-none z-0" />
       <div className="absolute top-[40%] right-[-10%] w-[350px] h-[350px] bg-red-900/5 rounded-full blur-[130px] pointer-events-none z-0" />
+
+      {/* Promo announcement */}
+      <MarqueeBanner />
 
       {/* Global Navbar */}
       <Navbar absolute={false} />

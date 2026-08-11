@@ -47,6 +47,39 @@ const PREMIUM_LIGHT_PRESETS: Record<string, string> = {
   "product-cap": "/images/products/cap-light.png",
 };
 
+/**
+ * Bootstraps the LAUNCH35 promo: 35% off, auto-applied to every cart. Runs
+ * once per admin session — no-ops if the coupon already exists so it stays
+ * safely editable/disable-able from the Coupons tab afterwards.
+ */
+const LAUNCH_COUPON_ID = "coupon-launch35";
+let launchCouponSeedInFlight = false;
+async function ensureLaunchCoupon() {
+  if (launchCouponSeedInFlight) return;
+  launchCouponSeedInFlight = true;
+  try {
+    const existing = await fetchCoupons();
+    if (existing.some((c) => c.code === "LAUNCH35")) return;
+    await saveCoupon({
+      id: LAUNCH_COUPON_ID,
+      code: "LAUNCH35",
+      type: "percentage",
+      value: 35,
+      minAmount: 0,
+      active: true,
+      isDefault: true,
+      neverExpires: true,
+      startDate: null,
+      endDate: null,
+      createdAt: Date.now(),
+    });
+  } catch (err) {
+    console.warn("Failed to seed LAUNCH35 coupon:", err);
+  } finally {
+    launchCouponSeedInFlight = false;
+  }
+}
+
 // ─── DRAG & DROP IMAGE UPLOADER ───────────────────────────────────────────────
 
 function DragDropUploader({
@@ -931,7 +964,13 @@ function CouponsTab() {
     const toSave: CMSCoupon = { ...editing, isDefault: defaultChoice };
 
     setSaving(true);
-    await saveCoupon(toSave);
+    try {
+      await saveCoupon(toSave);
+    } catch (err: any) {
+      setSaving(false);
+      setFormError(`Saved locally only — Firestore write failed (${err.code || err.message}). Shoppers won't see this until it's fixed.`);
+      return;
+    }
     setSaved(true);
     setCoupons(prev => {
       const idx = prev.findIndex(c => c.id === toSave.id);
@@ -955,7 +994,12 @@ function CouponsTab() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this coupon? This action is permanent.")) return;
-    await deleteCoupon(id);
+    try {
+      await deleteCoupon(id);
+    } catch (err: any) {
+      alert(`Failed to delete coupon from Firestore: ${err.message || err.code}`);
+      return;
+    }
     setCoupons(prev => prev.filter(c => c.id !== id));
   };
 
@@ -1329,7 +1373,13 @@ function ProductsTab() {
       updatedAt: Date.now()
     };
 
-    await saveProduct(updated);
+    try {
+      await saveProduct(updated);
+    } catch (err: any) {
+      setSaving(false);
+      alert(`Saved locally only — this price/change did NOT reach Firestore, so shoppers won't see it (${err.code || err.message}).`);
+      return;
+    }
     setSaved(true);
     setProducts(prev => {
       const idx = prev.findIndex(p => p.id === updated.id);
@@ -1341,7 +1391,12 @@ function ProductsTab() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this product? Cannot be undone.")) return;
-    await deleteProduct(id);
+    try {
+      await deleteProduct(id);
+    } catch (err: any) {
+      alert(`Failed to delete product from Firestore: ${err.message || err.code}`);
+      return;
+    }
     setProducts(prev => prev.filter(p => p.id !== id));
     if (editing?.id === id) setEditing(null);
   };
@@ -1495,7 +1550,13 @@ function BlogTab() {
   const handleSave = async () => {
     if (!editing) return;
     setSaving(true);
-    await saveBlogPost(editing);
+    try {
+      await saveBlogPost(editing);
+    } catch (err: any) {
+      setSaving(false);
+      alert(`Saved locally only — this post did NOT reach Firestore, so it's not live (${err.code || err.message}).`);
+      return;
+    }
     setSaved(true);
     setPosts(prev => {
       const idx = prev.findIndex(p => p.id === editing.id);
@@ -1507,7 +1568,12 @@ function BlogTab() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this post?")) return;
-    await deleteBlogPost(id);
+    try {
+      await deleteBlogPost(id);
+    } catch (err: any) {
+      alert(`Failed to delete post from Firestore: ${err.message || err.code}`);
+      return;
+    }
     setPosts(prev => prev.filter(p => p.id !== id));
     if (editing?.id === id) setEditing(null);
   };
@@ -1629,7 +1695,13 @@ function CategoriesTab() {
   const handleSave = async () => {
     if (!editing) return;
     setSaving(true);
-    await saveCategory(editing);
+    try {
+      await saveCategory(editing);
+    } catch (err: any) {
+      setSaving(false);
+      alert(`Saved locally only — this category did NOT reach Firestore, so it's not live (${err.code || err.message}).`);
+      return;
+    }
     setSaved(true);
     setCats(prev => {
       const idx = prev.findIndex(c => c.id === editing.id);
@@ -1641,7 +1713,12 @@ function CategoriesTab() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this category?")) return;
-    await deleteCategory(id);
+    try {
+      await deleteCategory(id);
+    } catch (err: any) {
+      alert(`Failed to delete category from Firestore: ${err.message || err.code}`);
+      return;
+    }
     setCats(prev => prev.filter(c => c.id !== id));
     if (editing?.id === id) setEditing(null);
   };
@@ -3263,35 +3340,92 @@ export default function AdminPage() {
   const { theme, toggleTheme } = useTheme();
 
   // Admin Authentication States
+  const ADMIN_EMAIL = "ghuborsupport@gmail.com";
+  const ADMIN_PASSWORD = "VIKI@321";
+
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [showAdminPass, setShowAdminPass] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminAuthLoading, setAdminAuthLoading] = useState(true);
+  const [adminLoginSubmitting, setAdminLoginSubmitting] = useState(false);
   const [adminError, setAdminError] = useState("");
 
-  // Check auth state on mount
+  // Drive admin access off the *real* Firebase Auth session (not just a local
+  // flag) so Firestore security rules — which check request.auth — actually
+  // let the panel read/write. See firestore.rules: writes require an
+  // authenticated session whose token email matches ADMIN_EMAIL.
   useEffect(() => {
-    const isAuth = sessionStorage.getItem("ghubor-admin-auth") === "true";
-    setIsAdminAuthenticated(isAuth);
-    setAdminAuthLoading(false);
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+    (async () => {
+      const { auth } = await import("../../utils/firebase");
+      if (!auth) {
+        setAdminAuthLoading(false);
+        return;
+      }
+      const { onAuthStateChanged } = await import("firebase/auth");
+      if (cancelled) return;
+      unsubscribe = onAuthStateChanged(auth, (user: any) => {
+        const isAdmin = !!user && user.email === ADMIN_EMAIL;
+        setIsAdminAuthenticated(isAdmin);
+        setAdminAuthLoading(false);
+        if (isAdmin) ensureLaunchCoupon();
+      });
+    })();
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, []);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAdminError("");
-    
-    if (adminEmail === "ghuborsupport@gmail.com" && adminPassword === "VIKI@321") {
-      sessionStorage.setItem("ghubor-admin-auth", "true");
-      setIsAdminAuthenticated(true);
-    } else {
+
+    if (adminEmail !== ADMIN_EMAIL || adminPassword !== ADMIN_PASSWORD) {
       setAdminError("Invalid administrator credentials.");
+      return;
+    }
+
+    const { auth } = await import("../../utils/firebase");
+    if (!auth) {
+      setAdminError("Database keys are not configured yet in .env.local.");
+      return;
+    }
+
+    setAdminLoginSubmitting(true);
+    const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import("firebase/auth");
+    try {
+      try {
+        await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+      } catch (signInErr: any) {
+        // First-time setup: the admin account doesn't exist in Firebase Auth yet.
+        if (signInErr.code === "auth/user-not-found" || signInErr.code === "auth/invalid-credential") {
+          await createUserWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+        } else {
+          throw signInErr;
+        }
+      }
+      // isAdminAuthenticated flips via the onAuthStateChanged listener above.
+    } catch (err: any) {
+      console.error("Admin sign-in failed:", err);
+      if (err.code === "auth/email-already-in-use") {
+        setAdminError("This admin account exists in Firebase Auth with a different password. Reset it in the Firebase Console.");
+      } else {
+        setAdminError(err.message || "Failed to authenticate with the database.");
+      }
+    } finally {
+      setAdminLoginSubmitting(false);
     }
   };
 
-  const handleAdminLogout = () => {
-    sessionStorage.removeItem("ghubor-admin-auth");
-    setIsAdminAuthenticated(false);
+  const handleAdminLogout = async () => {
+    const { auth } = await import("../../utils/firebase");
+    if (auth) {
+      const { signOut } = await import("firebase/auth");
+      await signOut(auth).catch(() => {});
+    }
     setAdminEmail("");
     setAdminPassword("");
   };
@@ -3425,10 +3559,20 @@ export default function AdminPage() {
 
             <button
               type="submit"
-              className="w-full bg-white hover:bg-gray-100 text-black font-mono font-medium text-xs tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase font-semibold mt-4 shadow-lg"
+              disabled={adminLoginSubmitting}
+              className="w-full bg-white hover:bg-gray-100 disabled:bg-white/50 text-black font-mono font-medium text-xs tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase font-semibold mt-4 shadow-lg"
             >
-              <span>ACCESS REGISTRY</span>
-              <ArrowLeft className="w-4 h-4 rotate-180" />
+              {adminLoginSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>AUTHENTICATING...</span>
+                </>
+              ) : (
+                <>
+                  <span>ACCESS REGISTRY</span>
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
+                </>
+              )}
             </button>
           </form>
         </div>

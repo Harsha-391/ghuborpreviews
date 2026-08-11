@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Heart } from "lucide-react";
 import { products } from "../data/products";
 import { toggleWishlist, isInWishlist } from "../utils/store";
+import { fetchStorefrontProducts } from "../utils/cms";
 import { useImageConfig } from "./ImageConfigContext";
 
 export default function ProductLineup() {
@@ -12,34 +13,11 @@ export default function ProductLineup() {
   const [lineupProducts, setLineupProducts] = useState(products.slice(0, 6));
 
   useEffect(() => {
-    const fetchDbProducts = async () => {
-      try {
-        const { db } = await import("../utils/firebase");
-        const { collection, getDocs } = await import("firebase/firestore");
-        if (!db) return;
-        const querySnapshot = await getDocs(collection(db, "cms-products"));
-        if (!querySnapshot.empty) {
-          const list: any[] = [];
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            list.push({
-              id: doc.id,
-              ...data,
-              image: data.darkImage || data.lightImage || "",
-              backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
-            });
-          });
-          list.sort((a, b) => (a.order || 99) - (b.order || 99));
-          const activeList = list.filter(p => p.published !== false).slice(0, 6);
-          if (activeList.length > 0) {
-            setLineupProducts(activeList);
-          }
-        }
-      } catch (err) {
-        console.warn("ProductLineup: Firestore load failed:", err);
-      }
-    };
-    fetchDbProducts();
+    fetchStorefrontProducts()
+      .then((list) => {
+        if (list.length > 0) setLineupProducts(list.slice(0, 6));
+      })
+      .catch((err) => console.warn("ProductLineup: storefront product load failed:", err));
   }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);

@@ -17,7 +17,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { CMSProductImage } from "../data/products";
+import { CMSProductImage, Product, products as staticProducts } from "../data/products";
 
 // ─── TYPE DEFINITIONS ────────────────────────────────────────────────────────
 
@@ -116,6 +116,7 @@ export async function saveProduct(product: CMSProduct): Promise<void> {
   } catch (err) {
     console.error("saveProduct failed:", err);
     upsertLocalItem("ghubor-cms-products", updated);
+    throw err;
   }
 }
 
@@ -130,6 +131,7 @@ export async function deleteProduct(id: string): Promise<void> {
   } catch (err) {
     console.error("deleteProduct failed:", err);
     deleteLocalItem("ghubor-cms-products", id);
+    throw err;
   }
 }
 
@@ -158,6 +160,32 @@ export function createEmptyProduct(): CMSProduct {
     imagesDark: [],
     imagesLight: [],
   };
+}
+
+/**
+ * The single source of truth for "what products does the storefront show".
+ * Merges published Firestore CMS products (which the admin panel manages —
+ * price, images, etc.) over the built-in `products.ts` catalog by id, so a
+ * price edit in the admin shows up everywhere (shop, product page, cart,
+ * checkout) instead of only on pages that happened to query Firestore
+ * directly. Unpublished/draft CMS products are excluded.
+ */
+export async function fetchStorefrontProducts(): Promise<Product[]> {
+  const cmsList = await fetchProducts();
+  const published = cmsList
+    .filter((p) => p.published !== false)
+    .map((p) => ({
+      ...p,
+      image: p.darkImage || p.lightImage || "",
+      backImage: p.galleryDark?.[0] || p.galleryLight?.[0] || "",
+    })) as unknown as Product[];
+
+  const overriddenIds = new Set(published.map((p) => p.id));
+  const staticOnly = staticProducts.filter((p) => !overriddenIds.has(p.id));
+
+  return [...published, ...staticOnly].sort(
+    (a, b) => ((a as any).order ?? 99) - ((b as any).order ?? 99)
+  );
 }
 
 // ─── BLOG POSTS ──────────────────────────────────────────────────────────────
@@ -189,6 +217,7 @@ export async function saveBlogPost(post: CMSBlogPost): Promise<void> {
   } catch (err) {
     console.error("saveBlogPost failed:", err);
     upsertLocalItem("ghubor-cms-blog", updated);
+    throw err;
   }
 }
 
@@ -203,6 +232,7 @@ export async function deleteBlogPost(id: string): Promise<void> {
   } catch (err) {
     console.error("deleteBlogPost failed:", err);
     deleteLocalItem("ghubor-cms-blog", id);
+    throw err;
   }
 }
 
@@ -254,6 +284,7 @@ export async function saveCategory(cat: CMSCategory): Promise<void> {
   } catch (err) {
     console.error("saveCategory failed:", err);
     upsertLocalItem("ghubor-cms-categories", updated);
+    throw err;
   }
 }
 
@@ -268,6 +299,7 @@ export async function deleteCategory(id: string): Promise<void> {
   } catch (err) {
     console.error("deleteCategory failed:", err);
     deleteLocalItem("ghubor-cms-categories", id);
+    throw err;
   }
 }
 
@@ -412,6 +444,7 @@ async function persistCouponRaw(coupon: CMSCoupon): Promise<void> {
   } catch (err) {
     console.error("saveCoupon failed:", err);
     upsertLocalItem("ghubor-cms-coupons", coupon);
+    throw err;
   }
 }
 
@@ -439,6 +472,7 @@ export async function deleteCoupon(id: string): Promise<void> {
   } catch (err) {
     console.error("deleteCoupon failed:", err);
     deleteLocalItem("ghubor-cms-coupons", id);
+    throw err;
   }
 }
 

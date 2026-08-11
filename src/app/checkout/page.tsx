@@ -4,16 +4,16 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck, ShoppingBag, CornerDownRight } from "lucide-react";
+import { ArrowRight, ShieldCheck, ShoppingBag, CornerDownRight, Check, Loader2, AlertCircle } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { products, Product } from "../../data/products";
+import { Product } from "../../data/products";
 import { getCart } from "../../utils/store";
 import { useAuth } from "../../components/AuthContext";
 import WaxSeal from "../../components/WaxSeal";
-import { db } from "../../utils/firebase";
-import { fetchCoupons, isCouponCurrentlyActive, CMSCoupon } from "../../utils/cms";
+import { fetchCoupons, isCouponCurrentlyActive, CMSCoupon, fetchStorefrontProducts } from "../../utils/cms";
 import { Tag } from "lucide-react";
+import { sanitizePhoneInput } from "../../utils/phone";
 
 interface DisplayCartItem {
   product: Product;
@@ -24,7 +24,15 @@ interface DisplayCartItem {
 export default function CheckoutPage() {
   const router = useRouter();
   const ease = [0.16, 1, 0.3, 1] as const;
-  const { profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
+
+  // Customers must be signed in before ordering — bounce anyone who lands
+  // here directly (e.g. a bookmarked/shared link) back through /login.
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login?next=/checkout");
+    }
+  }, [authLoading, user, router]);
 
   const [cartItems, setCartItems] = useState<DisplayCartItem[]>([]);
   const [formData, setFormData] = useState({
@@ -33,6 +41,7 @@ export default function CheckoutPage() {
     phone: "",
     address: "",
     city: "",
+    state: "",
     zip: "",
   });
 
@@ -51,36 +60,63 @@ export default function CheckoutPage() {
     }
   }, [profile]);
 
+  // ─── PIN code lookup (India Post) ──────────────────────────────────────────
+  // Validates the entered PIN code exists, and auto-fills city/state from it.
+  const [pincodeStatus, setPincodeStatus] = useState<"idle" | "checking" | "valid" | "invalid" | "unverified">("idle");
+  const [pincodeError, setPincodeError] = useState("");
+
+  useEffect(() => {
+    const pin = formData.zip.trim();
+    if (!/^\d{6}$/.test(pin)) {
+      setPincodeStatus("idle");
+      setPincodeError("");
+      return;
+    }
+
+    let cancelled = false;
+    setPincodeStatus("checking");
+    setPincodeError("");
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+        const data = await res.json();
+        if (cancelled) return;
+
+        const result = Array.isArray(data) ? data[0] : null;
+        if (result?.Status === "Success" && result.PostOffice?.length > 0) {
+          const po = result.PostOffice[0];
+          setFormData((prev) => ({
+            ...prev,
+            city: po.District || prev.city,
+            state: po.State || prev.state,
+          }));
+          setPincodeStatus("valid");
+        } else {
+          setPincodeStatus("invalid");
+          setPincodeError("This PIN code doesn't exist in India. Please check it.");
+        }
+      } catch (err) {
+        if (cancelled) return;
+        // Network/API hiccup — don't hard-block checkout over a third-party outage.
+        console.warn("PIN code lookup failed:", err);
+        setPincodeStatus("unverified");
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [formData.zip]);
+
 
   const [allProducts, setAllProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    const loadAllProducts = async () => {
-      let mergedProducts: any[] = [...products];
-      try {
-        if (db) {
-          const { collection, getDocs } = await import("firebase/firestore");
-          const snap = await getDocs(collection(db, "cms-products"));
-          if (!snap.empty) {
-            const dbList = snap.docs.map((d) => {
-              const data = d.data();
-              return {
-                id: d.id,
-                ...data,
-                image: data.darkImage || data.lightImage || "",
-                backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
-              };
-            });
-            mergedProducts = [...dbList, ...products];
-          }
-        }
-      } catch (err) {
-        console.warn("Failed to fetch Firestore products on checkout:", err);
-      }
-      setAllProducts(mergedProducts);
-    };
-
-    loadAllProducts();
+    fetchStorefrontProducts()
+      .then(setAllProducts)
+      .catch((err) => console.warn("Failed to load storefront products on checkout:", err));
   }, []);
 
   useEffect(() => {
@@ -116,7 +152,6 @@ export default function CheckoutPage() {
   const [defaultDismissed, setDefaultDismissed] = useState(false);
 
   useEffect(() => {
-    localStorage.removeItem("ghubor-applied-coupon");
     fetchCoupons().then(setCoupons);
   }, []);
 
@@ -140,9 +175,25 @@ export default function CheckoutPage() {
     }));
   };
 
-  // Auto-apply the default coupon (if any) once coupons + cart total are known
+  // Restore a coupon already applied on the cart page, or auto-apply the
+  // default (e.g. LAUNCH35) once coupons + cart total are known.
   useEffect(() => {
     if (appliedCoupon || defaultDismissed || coupons.length === 0 || subtotal === 0) return;
+
+    const saved = localStorage.getItem("ghubor-applied-coupon");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const match = coupons.find((c) => c.code === parsed.code);
+        if (match && isCouponCurrentlyActive(match) && (!match.minAmount || subtotal >= match.minAmount)) {
+          applyCouponToState(match);
+          return;
+        }
+      } catch {
+        // fall through to clearing below
+      }
+      localStorage.removeItem("ghubor-applied-coupon");
+    }
 
     const defaultCoupon = coupons.find((c) => c.isDefault && isCouponCurrentlyActive(c));
     if (!defaultCoupon) return;
@@ -196,15 +247,44 @@ export default function CheckoutPage() {
     });
   };
 
+  const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, zip: e.target.value.replace(/\D/g, "").slice(0, 6) }));
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, phone: sanitizePhoneInput(e.target.value) }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.zip) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.state || !formData.zip) {
       alert("Please fill in all shipping fields to proceed.");
       return;
     }
+    if (formData.phone.length !== 10) {
+      alert("Please enter a valid 10-digit phone number.");
+      return;
+    }
+    if (pincodeStatus === "invalid") {
+      alert("This PIN code doesn't exist in India. Please correct it before proceeding.");
+      return;
+    }
+    if (pincodeStatus === "checking") {
+      alert("Still verifying the PIN code — one moment.");
+      return;
+    }
+
     localStorage.setItem("ghubor-checkout-info", JSON.stringify(formData));
     router.push("/payment");
   };
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-bg-page flex items-center justify-center text-primary font-mono text-xs uppercase tracking-widest">
+        {authLoading ? "Loading..." : "Redirecting to sign in..."}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg-page text-text-page selection:bg-accent selection:text-primary relative overflow-x-hidden pb-24">
@@ -260,15 +340,19 @@ export default function CheckoutPage() {
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">Phone Number</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  required
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="+91 XXXXX XXXXX"
-                  className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-sm sm:text-base font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-muted font-mono">+91</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    name="phone"
+                    required
+                    value={formData.phone}
+                    onChange={handlePhoneChange}
+                    placeholder="98765 43210"
+                    className="w-full bg-bg-page/40 border border-border-theme rounded-lg p-3 pl-10 text-sm sm:text-base font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
+                  />
+                </div>
               </div>
             </div>
 
@@ -285,32 +369,64 @@ export default function CheckoutPage() {
               />
             </div>
 
+            <div className="flex flex-col gap-2">
+              <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">Postal / ZIP Code (PIN)</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  name="zip"
+                  required
+                  value={formData.zip}
+                  onChange={handleZipChange}
+                  placeholder="400001"
+                  className={`w-full bg-bg-page/40 border rounded-lg p-3 pr-10 text-sm sm:text-base font-mono text-text-page outline-none transition-colors ${
+                    pincodeStatus === "invalid" ? "border-red-500/60 focus:border-red-500" : "border-border-theme focus:border-primary/50"
+                  }`}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {pincodeStatus === "checking" && <Loader2 className="w-4 h-4 text-text-muted animate-spin" />}
+                  {pincodeStatus === "valid" && <Check className="w-4 h-4 text-primary" />}
+                  {pincodeStatus === "invalid" && <AlertCircle className="w-4 h-4 text-red-500" />}
+                </span>
+              </div>
+              {pincodeStatus === "invalid" && (
+                <span className="text-xs font-mono font-semibold text-red-500">{pincodeError}</span>
+              )}
+              {pincodeStatus === "unverified" && (
+                <span className="text-xs font-mono text-text-muted">Couldn&apos;t verify this PIN code right now — double-check it&apos;s correct.</span>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">City / State</label>
+                <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">City</label>
                 <input
                   type="text"
                   name="city"
                   required
                   value={formData.city}
                   onChange={handleChange}
-                  placeholder="MUMBAI, MH"
+                  placeholder="MUMBAI"
                   className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-sm sm:text-base font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">Postal / ZIP Code</label>
+                <label className="text-xs sm:text-sm font-mono font-semibold text-text-page uppercase tracking-widest">State</label>
                 <input
                   type="text"
-                  name="zip"
+                  name="state"
                   required
-                  value={formData.zip}
+                  value={formData.state}
                   onChange={handleChange}
-                  placeholder="400001"
+                  placeholder="MAHARASHTRA"
                   className="bg-bg-page/40 border border-border-theme rounded-lg p-3 text-sm sm:text-base font-mono text-text-page outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
             </div>
+            <p className="text-[10px] font-mono text-text-dim uppercase tracking-wide -mt-3">
+              City &amp; state auto-fill from your PIN code — edit if needed.
+            </p>
 
             <button
               type="submit"
@@ -358,13 +474,13 @@ export default function CheckoutPage() {
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   placeholder="COVENANT CODE"
                   disabled={!!appliedCoupon?.isDefault}
-                  className="flex-grow bg-bg-page/40 border border-border-theme rounded-lg px-3 py-2.5 text-sm font-mono text-text-page outline-none focus:border-primary/50 transition-colors placeholder:text-text-muted/50 uppercase disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex-grow min-w-0 bg-bg-page/40 border border-border-theme rounded-lg px-3 py-2.5 text-sm font-mono text-text-page outline-none focus:border-primary/50 transition-colors placeholder:text-text-muted/50 uppercase disabled:opacity-40 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
                   onClick={handleApplyCoupon}
                   disabled={!!appliedCoupon?.isDefault}
-                  className="bg-primary hover:bg-primary/90 text-bg-page text-xs sm:text-sm font-mono font-bold px-4 rounded-lg uppercase tracking-wider transition-colors cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="shrink-0 bg-primary hover:bg-primary/90 text-bg-page text-xs sm:text-sm font-mono font-bold px-4 rounded-lg uppercase tracking-wider transition-colors cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Apply
                 </button>

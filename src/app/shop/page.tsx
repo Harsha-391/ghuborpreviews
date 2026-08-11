@@ -7,10 +7,10 @@ import { useSearchParams } from "next/navigation";
 import { ArrowRight, Heart } from "lucide-react";
 import { products } from "../../data/products";
 import Navbar from "../../components/Navbar";
+import MarqueeBanner from "../../components/MarqueeBanner";
 import Footer from "../../components/Footer";
 import { toggleWishlist, isInWishlist } from "../../utils/store";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../utils/firebase";
+import { fetchStorefrontProducts } from "../../utils/cms";
 import { useImageConfig } from "../../components/ImageConfigContext";
 import { trackPageView, trackSearch } from "../../utils/analytics";
 
@@ -29,29 +29,9 @@ function ShopContent() {
   }, [q]);
 
   useEffect(() => {
-    const fetchDbProducts = async () => {
-      try {
-        if (!db) return;
-        const querySnapshot = await getDocs(collection(db, "cms-products"));
-        if (!querySnapshot.empty) {
-          const list: any[] = [];
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            list.push({
-              id: doc.id,
-              ...data,
-              image: data.darkImage || data.lightImage || "",
-              backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
-            });
-          });
-          list.sort((a, b) => (a.order || 99) - (b.order || 99));
-          setDisplayProducts(list);
-        }
-      } catch (err) {
-        console.warn("Firestore products query failed (config might be missing), using local fallback:", err);
-      }
-    };
-    fetchDbProducts();
+    fetchStorefrontProducts()
+      .then(setDisplayProducts)
+      .catch((err) => console.warn("Failed to load storefront products, using local fallback:", err));
   }, []);
 
   const filteredProducts = displayProducts.filter((product) => {
@@ -72,6 +52,9 @@ function ShopContent() {
       {/* Ambient Red Glows */}
       <div className="absolute top-[10%] left-[20%] w-[350px] h-[350px] bg-red-950/15 rounded-full blur-[140px] pointer-events-none z-0" />
       <div className="absolute bottom-[25%] right-[15%] w-[450px] h-[450px] bg-red-900/5 rounded-full blur-[160px] pointer-events-none z-0" />
+
+      {/* Promo announcement */}
+      <MarqueeBanner />
 
       {/* Global Navbar */}
       <Navbar absolute={false} />

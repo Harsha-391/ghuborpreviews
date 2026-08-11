@@ -1,0 +1,13 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Product/blog/category imagery must be publicly viewable on the storefront.
+      allow read: if true;
+      // Only the signed-in Ghubor admin account may upload/replace/delete assets.
+      allow write: if request.auth != null
+        && request.auth.token.email == 'ghuborsupport@gmail.com';
+    }
+  }
+}

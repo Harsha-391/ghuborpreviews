@@ -7,7 +7,7 @@ import { ArrowRight, CreditCard, Shield, ShieldCheck, Loader2, Sparkles } from "
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { getCart, clearCart } from "../../utils/store";
-import { products } from "../../data/products";
+import { fetchStorefrontProducts } from "../../utils/cms";
 import { useAuth } from "../../components/AuthContext";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../../utils/firebase";
@@ -15,7 +15,14 @@ import { db } from "../../utils/firebase";
 export default function PaymentPage() {
   const router = useRouter();
   const ease = [0.16, 1, 0.3, 1] as const;
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+
+  // Customers must be signed in before ordering.
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login?next=/checkout");
+    }
+  }, [authLoading, user, router]);
 
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
@@ -28,32 +35,9 @@ export default function PaymentPage() {
   const [allProducts, setAllProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    const loadAllProducts = async () => {
-      let mergedProducts: any[] = [...products];
-      try {
-        if (db) {
-          const { collection, getDocs } = await import("firebase/firestore");
-          const snap = await getDocs(collection(db, "cms-products"));
-          if (!snap.empty) {
-            const dbList = snap.docs.map((d) => {
-              const data = d.data();
-              return {
-                id: d.id,
-                ...data,
-                image: data.darkImage || data.lightImage || "",
-                backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
-              };
-            });
-            mergedProducts = [...dbList, ...products];
-          }
-        }
-      } catch (err) {
-        console.warn("Failed to fetch Firestore products on payment:", err);
-      }
-      setAllProducts(mergedProducts);
-    };
-
-    loadAllProducts();
+    fetchStorefrontProducts()
+      .then(setAllProducts)
+      .catch((err) => console.warn("Failed to load storefront products on payment:", err));
   }, []);
 
   // Load cart items and calculate total price
@@ -223,6 +207,14 @@ export default function PaymentPage() {
       setLoading(false);
     }
   };
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-bg-page flex items-center justify-center text-primary font-mono text-xs uppercase tracking-widest">
+        {authLoading ? "Loading..." : "Redirecting to sign in..."}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg-page text-text-page selection:bg-accent selection:text-primary relative overflow-x-hidden pb-24">

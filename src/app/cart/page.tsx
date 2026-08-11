@@ -7,10 +7,11 @@ import { useRouter } from "next/navigation";
 import { ShoppingBag, Trash2, ArrowRight, ShieldCheck, Tag, Plus, Minus } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { products, Product } from "../../data/products";
+import { Product } from "../../data/products";
 import { getCart, removeFromCart, updateCartQty } from "../../utils/store";
 import WaxSeal from "../../components/WaxSeal";
-import { db } from "../../utils/firebase";
+import { fetchCoupons, isCouponCurrentlyActive, CMSCoupon, fetchStorefrontProducts } from "../../utils/cms";
+import { useAuth } from "../../components/AuthContext";
 
 interface DisplayCartItem {
   product: Product;
@@ -21,37 +22,15 @@ interface DisplayCartItem {
 export default function CartPage() {
   const ease = [0.16, 1, 0.3, 1] as const;
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const [cartItems, setCartItems] = useState<DisplayCartItem[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    const loadAllProducts = async () => {
-      let mergedProducts: any[] = [...products];
-      try {
-        if (db) {
-          const { collection, getDocs } = await import("firebase/firestore");
-          const snap = await getDocs(collection(db, "cms-products"));
-          if (!snap.empty) {
-            const dbList = snap.docs.map((d) => {
-              const data = d.data();
-              return {
-                id: d.id,
-                ...data,
-                image: data.darkImage || data.lightImage || "",
-                backImage: data.galleryDark?.[0] || data.galleryLight?.[0] || ""
-              };
-            });
-            mergedProducts = [...dbList, ...products];
-          }
-        }
-      } catch (err) {
-        console.warn("Failed to fetch Firestore products on cart:", err);
-      }
-      setAllProducts(mergedProducts);
-    };
-
-    loadAllProducts();
+    fetchStorefrontProducts()
+      .then(setAllProducts)
+      .catch((err) => console.warn("Failed to load storefront products on cart:", err));
   }, []);
 
   useEffect(() => {
@@ -85,7 +64,87 @@ export default function CartPage() {
 
   const subtotal = cartItems.reduce((acc, item) => acc + parsePrice(item.product.price) * item.qty, 0);
   const shipping = 0; // Free comp shipping
-  const total = subtotal + shipping;
+
+  // ─── Coupons ────────────────────────────────────────────────────────────────
+  const [coupons, setCoupons] = useState<CMSCoupon[]>([]);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<CMSCoupon | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [defaultDismissed, setDefaultDismissed] = useState(false);
+
+  useEffect(() => {
+    fetchCoupons().then(setCoupons);
+  }, []);
+
+  const applyCouponToState = (coupon: CMSCoupon) => {
+    const discount = coupon.type === "percentage"
+      ? Math.round((subtotal * coupon.value) / 100)
+      : coupon.value;
+
+    setDiscountAmount(discount);
+    setAppliedCoupon(coupon);
+    setCouponError("");
+
+    localStorage.setItem("ghubor-applied-coupon", JSON.stringify({
+      code: coupon.code,
+      discount,
+      type: coupon.type,
+      value: coupon.value,
+    }));
+  };
+
+  // Auto-apply the default coupon (e.g. LAUNCH35) once coupons + cart total are known
+  useEffect(() => {
+    if (appliedCoupon || defaultDismissed || coupons.length === 0 || subtotal === 0) return;
+
+    const defaultCoupon = coupons.find((c) => c.isDefault && isCouponCurrentlyActive(c));
+    if (!defaultCoupon) return;
+    if (defaultCoupon.minAmount && subtotal < defaultCoupon.minAmount) return;
+
+    applyCouponToState(defaultCoupon);
+  }, [coupons, subtotal, appliedCoupon, defaultDismissed]);
+
+  // Re-price an already-applied coupon if cart contents change its discount amount
+  useEffect(() => {
+    if (!appliedCoupon) return;
+    applyCouponToState(appliedCoupon);
+  }, [subtotal]);
+
+  const handleApplyCoupon = () => {
+    setCouponError("");
+    if (!couponCode.trim()) return;
+
+    const match = coupons.find((c) => c.code === couponCode.trim().toUpperCase());
+
+    if (!match) {
+      setCouponError("INVALID PROMO CODE.");
+      return;
+    }
+    if (!isCouponCurrentlyActive(match)) {
+      setCouponError("COUPON IS NOT CURRENTLY ACTIVE.");
+      return;
+    }
+    if (match.minAmount && subtotal < match.minAmount) {
+      setCouponError(`MINIMUM PURCHASE IS ₹${match.minAmount}.`);
+      return;
+    }
+
+    applyCouponToState(match);
+  };
+
+  const handleRemoveCoupon = () => {
+    if (appliedCoupon?.isDefault) {
+      setDefaultDismissed(true);
+    }
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setCouponCode("");
+    setCouponError("");
+    localStorage.removeItem("ghubor-applied-coupon");
+  };
+
+  const total = Math.max(0, subtotal - discountAmount + shipping);
 
   const handleRemove = (id: string, size: string) => {
     removeFromCart(id, size);
@@ -96,6 +155,10 @@ export default function CartPage() {
   };
 
   const handleCheckout = () => {
+    if (!user) {
+      router.push("/login?next=/checkout");
+      return;
+    }
     router.push("/checkout");
   };
 
@@ -213,6 +276,12 @@ export default function CartPage() {
                   <span>SUBTOTAL:</span>
                   <span className="text-text-page font-medium">₹{subtotal.toLocaleString("en-IN")}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-primary">
+                    <span>DISCOUNT ({appliedCoupon?.code}):</span>
+                    <span className="font-medium">- ₹{discountAmount.toLocaleString("en-IN")}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>SHIPPING:</span>
                   <span className="text-primary font-medium">FREE (SANCTUARY COMP)</span>
@@ -224,23 +293,60 @@ export default function CartPage() {
               </div>
 
               {/* Promo input */}
-              <div className="bg-bg-page/60 border border-border-theme rounded-lg p-2.5 flex items-center gap-2">
-                <Tag className="w-3.5 h-3.5 text-primary" />
-                <input
-                  type="text"
-                  placeholder="ENTER PROMO CODE"
-                  className="bg-transparent outline-none border-none text-[10px] font-mono text-primary placeholder-text-dim/50 flex-grow uppercase"
-                />
+              <div className="flex flex-col gap-2">
+                <div className="bg-bg-page/60 border border-border-theme rounded-lg p-2.5 flex items-center gap-2">
+                  <Tag className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="ENTER PROMO CODE"
+                    disabled={!!appliedCoupon?.isDefault}
+                    className="bg-transparent outline-none border-none text-[10px] font-mono text-primary placeholder-text-dim/50 flex-grow min-w-0 uppercase disabled:opacity-40"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={!!appliedCoupon?.isDefault}
+                    className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary hover:text-text-page transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-transparent border-none shrink-0"
+                  >
+                    Apply
+                  </button>
+                </div>
+                {couponError && (
+                  <span className="text-[10px] font-mono font-semibold text-red-500 uppercase tracking-wider">{couponError}</span>
+                )}
+                {appliedCoupon && (
+                  <div className="flex justify-between items-center bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 font-mono text-[10px] font-semibold text-primary">
+                    <span>
+                      COUPON &quot;{appliedCoupon.code}&quot; ACTIVE
+                      {appliedCoupon.isDefault && <span className="text-text-muted font-normal"> (auto-applied)</span>}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-red-500 hover:text-red-400 font-bold cursor-pointer ml-2 border-none bg-transparent"
+                    >
+                      REMOVE
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Checkout CTA */}
               <button
                 onClick={handleCheckout}
-                className="w-full bg-primary hover:bg-primary/90 text-bg-page font-mono font-medium text-xs tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase font-semibold shadow-md hover:shadow-primary/10"
+                disabled={authLoading}
+                className="w-full bg-primary hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed text-bg-page font-mono font-medium text-xs tracking-widest py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase font-semibold shadow-md hover:shadow-primary/10"
               >
-                <span>INITIATE RITUAL CHECKOUT</span>
+                <span>{!authLoading && !user ? "SIGN IN TO CHECKOUT" : "INITIATE RITUAL CHECKOUT"}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
+              {!authLoading && !user && (
+                <p className="text-[10px] font-mono text-text-muted uppercase tracking-wide text-center -mt-3">
+                  Sign in required before ordering
+                </p>
+              )}
 
               <div className="flex items-center justify-center gap-2 text-[10px] text-text-muted font-mono uppercase">
                 <ShieldCheck className="w-4 h-4 text-primary" />

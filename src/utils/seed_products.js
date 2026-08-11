@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDocs, deleteDoc, collection } from "firebase/firestore";
 import fs from "fs";
 import path from "path";
@@ -12,7 +13,14 @@ const firebaseConfig = {
   appId: "1:814996938757:web:b7197d1738e32585dabc6c"
 };
 
+// Same admin account the /admin panel signs in with (see src/app/admin/page.tsx).
+// firestore.rules only allows writes to cms-products from this authenticated
+// admin session — log in to /admin at least once first so the account exists.
+const ADMIN_EMAIL = "ghuborsupport@gmail.com";
+const ADMIN_PASSWORD = "VIKI@321";
+
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Folders relative to the public directory
@@ -148,8 +156,16 @@ const foldersMap = {
 };
 
 async function seed() {
+  console.log("Authenticating as admin...");
+  try {
+    await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+  } catch (err) {
+    console.error("Admin sign-in failed. Log in to /admin in the browser at least once first (it auto-creates this account), then re-run this script.", err);
+    process.exit(1);
+  }
+
   console.log("Seeding and cleaning database...");
-  
+
   const allowedIds = Object.keys(foldersMap).map(folderName => `product-${folderName.replace(/\s+/g, "-")}`);
   console.log("Allowed Product IDs:", allowedIds);
 
