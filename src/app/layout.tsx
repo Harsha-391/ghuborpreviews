@@ -22,6 +22,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.ghubor.com"),
   title: "Ghubor | Armor for the Modern Gibbor",
   description: "Armor for the modern Gibbor. Wearable scripture. Fighting battles nobody sees. Forged in the dark, speaking in fragments, bound to become skin.",
   icons: {
