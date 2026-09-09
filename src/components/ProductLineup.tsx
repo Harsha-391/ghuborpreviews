@@ -31,11 +31,20 @@ export default function ProductLineup() {
     let animationFrameId: number;
     const speed = 0.8; // px per frame
 
+    // Cache scrollWidth instead of reading it every animation frame — reading a
+    // layout property (scrollWidth) right after writing one (scrollLeft) forces
+    // the browser to synchronously recompute layout every frame, forever, which
+    // shows up as sustained main-thread work / "forced reflow" in profiling.
+    let halfWidth = container.scrollWidth / 2;
+    const resizeObserver = new ResizeObserver(() => {
+      halfWidth = container.scrollWidth / 2;
+    });
+    resizeObserver.observe(container);
+
     const updateScroll = () => {
       if (!isInteractingRef.current) {
         container.scrollLeft += speed;
         // Infinite scroll loop reset
-        const halfWidth = container.scrollWidth / 2;
         if (container.scrollLeft >= halfWidth) {
           container.scrollLeft -= halfWidth;
         }
@@ -100,6 +109,7 @@ export default function ProductLineup() {
 
     return () => {
       cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
       container.removeEventListener("mousedown", handleMouseDown);
       container.removeEventListener("mouseenter", handleMouseEnter);
       container.removeEventListener("mouseleave", handleMouseLeave);
