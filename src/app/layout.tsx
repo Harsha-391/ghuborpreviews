@@ -8,7 +8,7 @@ import { ThemeProvider } from "../components/ThemeContext";
 import { ImageConfigProvider } from "../components/ImageConfigContext";
 
 const almarai = Almarai({
-  subsets: ["arabic", "latin"],
+  subsets: ["latin"],
   weight: ["300", "400", "700", "800"],
   display: "swap",
 });
