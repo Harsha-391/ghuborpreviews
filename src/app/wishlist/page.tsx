@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { Heart, Trash2, ArrowRight, ShoppingBag } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
@@ -64,11 +65,13 @@ export default function WishlistPage() {
                 className="flex flex-col sm:flex-row gap-6 items-center bg-bg-card border border-border-theme rounded-2xl p-6 hover:border-primary/20 transition-all duration-300 shadow-sm"
               >
                 {/* Product Image */}
-                <Link href={`/shop/${item.id}`} className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-bg-page/40 border border-border-theme shrink-0">
-                  <img
+                <Link href={`/shop/${item.id}`} className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-bg-page/40 border border-border-theme shrink-0">
+                  <Image
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover object-center"
+                    fill
+                    sizes="112px"
+                    className="object-cover object-center"
                   />
                 </Link>
 

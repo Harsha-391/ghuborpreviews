@@ -27,88 +27,88 @@ const ImageConfigContext = createContext<ImageConfigContextType | undefined>(und
 export const DEFAULT_IMAGE_CONFIGS: ImageConfigs = {
   hero: {
     label: "Hero Background Image",
-    darkUrl: "/images/hero.png",
-    lightUrl: "/images/hero-light.png",
+    darkUrl: "/images/hero.webp",
+    lightUrl: "/images/hero-light.webp",
   },
   struggle: {
     label: "Struggle Pillar Icon",
-    darkUrl: "/images/pillars/struggle.png",
-    lightUrl: "/images/pillars/struggle-light.png",
+    darkUrl: "/images/pillars/struggle.webp",
+    lightUrl: "/images/pillars/struggle-light.webp",
   },
   faith: {
     label: "Faith Pillar Icon",
-    darkUrl: "/images/pillars/faith.png",
-    lightUrl: "/images/pillars/faith-light.png",
+    darkUrl: "/images/pillars/faith.webp",
+    lightUrl: "/images/pillars/faith-light.webp",
   },
   transcendence: {
     label: "Transcendence Pillar Icon",
-    darkUrl: "/images/pillars/transcendence.png",
-    lightUrl: "/images/pillars/transcendence-light.png",
+    darkUrl: "/images/pillars/transcendence.webp",
+    lightUrl: "/images/pillars/transcendence-light.webp",
   },
   glyph: {
     label: "Signature Glyph Graphic",
-    darkUrl: "/images/details/glyph.png",
-    lightUrl: "/images/details/glyph-light.png",
+    darkUrl: "/images/details/glyph.webp",
+    lightUrl: "/images/details/glyph-light.webp",
   },
   tag: {
     label: "Woven Identification Tag",
-    darkUrl: "/images/details/tag.png",
-    lightUrl: "/images/details/tag-light.png",
+    darkUrl: "/images/details/tag.webp",
+    lightUrl: "/images/details/tag-light.webp",
   },
   scripture: {
     label: "Sacred Inscription Closeup",
-    darkUrl: "/images/details/scripture.png",
-    lightUrl: "/images/details/scripture-light.png",
+    darkUrl: "/images/details/scripture.webp",
+    lightUrl: "/images/details/scripture-light.webp",
   },
   "product-hoodie": {
     label: "Sacred Shield Hoodie Image",
-    darkUrl: "/images/products/hoodie.png",
-    lightUrl: "/images/products/hoodie-light.png",
+    darkUrl: "/images/products/hoodie.webp",
+    lightUrl: "/images/products/hoodie-light.webp",
   },
   "product-jacket": {
     label: "Silent Battle Field Jacket Image",
-    darkUrl: "/images/products/jacket.png",
-    lightUrl: "/images/products/jacket-light.png",
+    darkUrl: "/images/products/jacket.webp",
+    lightUrl: "/images/products/jacket-light.webp",
   },
   "product-longsleeve": {
     label: "Modern Gibbor Mockneck Image",
-    darkUrl: "/images/products/longsleeve.png",
-    lightUrl: "/images/products/longsleeve-light.png",
+    darkUrl: "/images/products/longsleeve.webp",
+    lightUrl: "/images/products/longsleeve-light.webp",
   },
   "product-pants": {
     label: "Sanctuary Work Pants Image",
-    darkUrl: "/images/products/pants.png",
-    lightUrl: "/images/products/pants-light.png",
+    darkUrl: "/images/products/pants.webp",
+    lightUrl: "/images/products/pants-light.webp",
   },
   "product-tshirt": {
     label: "Scripture Fragment Tee Image",
-    darkUrl: "/images/products/tshirt.png",
-    lightUrl: "/images/products/tshirt-light.png",
+    darkUrl: "/images/products/tshirt.webp",
+    lightUrl: "/images/products/tshirt-light.webp",
   },
   "product-tshirt-back": {
     label: "Scripture Fragment Tee Back Image",
-    darkUrl: "/images/products/tshirt-back.png",
-    lightUrl: "/images/products/tshirt-back-light.png",
+    darkUrl: "/images/products/tshirt-back.webp",
+    lightUrl: "/images/products/tshirt-back-light.webp",
   },
   "product-hoodie-back": {
     label: "Sacred Shield Hoodie Back Image",
-    darkUrl: "/images/products/hoodie-back.png",
-    lightUrl: "/images/products/hoodie-back-light.png",
+    darkUrl: "/images/products/hoodie-back.webp",
+    lightUrl: "/images/products/hoodie-back-light.webp",
   },
   "product-jacket-back": {
     label: "Silent Battle Field Jacket Back Image",
-    darkUrl: "/images/products/jacket-back.png",
-    lightUrl: "/images/products/jacket-back-light.png",
+    darkUrl: "/images/products/jacket-back.webp",
+    lightUrl: "/images/products/jacket-back-light.webp",
   },
   "product-longsleeve-back": {
     label: "Modern Gibbor Mockneck Back Image",
-    darkUrl: "/images/products/longsleeve-back.png",
-    lightUrl: "/images/products/longsleeve-back-light.png",
+    darkUrl: "/images/products/longsleeve-back.webp",
+    lightUrl: "/images/products/longsleeve-back-light.webp",
   },
   "product-cap": {
     label: "Faith Calligraphy Cap Image",
-    darkUrl: "/images/products/cap.png",
-    lightUrl: "/images/products/cap-light.png",
+    darkUrl: "/images/products/cap.webp",
+    lightUrl: "/images/products/cap-light.webp",
   },
 };
 
@@ -136,25 +136,37 @@ export function ImageConfigProvider({ children }: { children: React.ReactNode })
       if (stored) {
         setConfigs({ ...DEFAULT_IMAGE_CONFIGS, ...stored });
       }
+      // Public pages already have a usable image set (defaults + any local cache),
+      // so nothing is blocked on Firestore from here on.
+      setLoading(false);
 
-      // 2. Try Firestore if active
+      // 2. Try Firestore if active — deferred off the critical rendering path so this
+      // background sync doesn't compete with initial paint / hydration for CPU time.
       if (db) {
-        try {
-          const docRef = doc(db, "configs", "theme-images");
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data() as ImageConfigs;
-            const merged = { ...DEFAULT_IMAGE_CONFIGS, ...data };
-            setConfigs(merged);
-            if (typeof window !== "undefined") {
-              localStorage.setItem("ghubor-image-configs", JSON.stringify(merged));
+        const firestoreDb = db;
+        const syncFromFirestore = async () => {
+          try {
+            const docRef = doc(firestoreDb, "configs", "theme-images");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              const data = docSnap.data() as ImageConfigs;
+              const merged = { ...DEFAULT_IMAGE_CONFIGS, ...data };
+              setConfigs(merged);
+              if (typeof window !== "undefined") {
+                localStorage.setItem("ghubor-image-configs", JSON.stringify(merged));
+              }
             }
+          } catch (err) {
+            console.warn("Firestore image configs retrieval failed, relying on local state:", err);
           }
-        } catch (err) {
-          console.warn("Firestore image configs retrieval failed, relying on local state:", err);
+        };
+
+        if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+          (window as any).requestIdleCallback(syncFromFirestore, { timeout: 3000 });
+        } else {
+          setTimeout(syncFromFirestore, 0);
         }
       }
-      setLoading(false);
     };
 
     loadConfigs();

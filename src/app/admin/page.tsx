@@ -33,19 +33,19 @@ import { uploadImage, createPreviewUrl, revokePreviewUrl, UploadFolder } from ".
 type AdminTab = "overview" | "images" | "products" | "blog" | "categories" | "coupons" | "orders" | "shipping";
 
 const PREMIUM_LIGHT_PRESETS: Record<string, string> = {
-  hero: "/images/hero-light.png",
-  struggle: "/images/pillars/struggle-light.png",
-  faith: "/images/pillars/faith-light.png",
-  transcendence: "/images/pillars/transcendence-light.png",
-  glyph: "/images/details/glyph-light.png",
-  tag: "/images/details/tag-light.png",
-  scripture: "/images/details/scripture-light.png",
-  "product-hoodie": "/images/products/hoodie-light.png",
-  "product-jacket": "/images/products/jacket-light.png",
-  "product-longsleeve": "/images/products/longsleeve-light.png",
-  "product-pants": "/images/products/pants-light.png",
-  "product-tshirt": "/images/products/tshirt-light.png",
-  "product-cap": "/images/products/cap-light.png",
+  hero: "/images/hero-light.webp",
+  struggle: "/images/pillars/struggle-light.webp",
+  faith: "/images/pillars/faith-light.webp",
+  transcendence: "/images/pillars/transcendence-light.webp",
+  glyph: "/images/details/glyph-light.webp",
+  tag: "/images/details/tag-light.webp",
+  scripture: "/images/details/scripture-light.webp",
+  "product-hoodie": "/images/products/hoodie-light.webp",
+  "product-jacket": "/images/products/jacket-light.webp",
+  "product-longsleeve": "/images/products/longsleeve-light.webp",
+  "product-pants": "/images/products/pants-light.webp",
+  "product-tshirt": "/images/products/tshirt-light.webp",
+  "product-cap": "/images/products/cap-light.webp",
 };
 
 /**

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useImageConfig } from "../../components/ImageConfigContext";
@@ -66,7 +67,7 @@ export default function AboutPage() {
         >
           {/* Subtle logo backing */}
           <div className="absolute right-0 bottom-0 opacity-[0.03] translate-x-12 translate-y-12">
-            <img src="/logo-white.svg" alt="" className="w-96" />
+            <Image src="/logo-white.svg" alt="" width={384} height={256} className="w-96 h-auto" />
           </div>
 
           <h2 className="font-serif italic text-2xl sm:text-3xl text-primary font-light mb-6">
@@ -116,8 +117,8 @@ export default function AboutPage() {
                 </div>
                 <div className="mt-8 border-t border-border-theme pt-4 flex items-center justify-between">
                   <span className="text-[8px] font-mono text-text-dim uppercase">ARTIFACT SYMBOL</span>
-                  <div className="w-5 h-5 opacity-40 filter invert brightness-125">
-                    <img src={getImageUrl("glyph")} alt="" className="w-full h-full object-contain" />
+                  <div className="relative w-5 h-5 opacity-40 filter invert brightness-125">
+                    <Image src={getImageUrl("glyph")} alt="" fill sizes="20px" className="object-contain" />
                   </div>
                 </div>
               </motion.div>

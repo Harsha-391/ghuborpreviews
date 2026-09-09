@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ShoppingBag, Trash2, ArrowRight, ShieldCheck, Tag, Plus, Minus } from "lucide-react";
 import Navbar from "../../components/Navbar";
@@ -198,12 +199,14 @@ export default function CartPage() {
                   {/* Image */}
                   <Link
                     href={`/shop/${item.product.id}`}
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-bg-page/40 border border-border-theme shrink-0"
+                    className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-bg-page/40 border border-border-theme shrink-0"
                   >
-                    <img
+                    <Image
                       src={item.product.image}
                       alt={item.product.title}
-                      className="w-full h-full object-cover object-center"
+                      fill
+                      sizes="96px"
+                      className="object-cover object-center"
                     />
                   </Link>
 

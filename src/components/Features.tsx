@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import Image from "next/image";
 import { Check, ArrowRight } from "lucide-react";
 import WordsPullUpMultiStyle from "./WordsPullUpMultiStyle";
 import { useImageConfig } from "./ImageConfigContext";
@@ -132,11 +133,13 @@ export default function Features() {
           <div>
             {/* Icon Header */}
             <div className="flex items-center justify-between mb-8">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded overflow-hidden bg-bg-page border border-border-theme flex items-center justify-center p-1">
-                <img
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded overflow-hidden bg-bg-page border border-border-theme flex items-center justify-center p-1">
+                <Image
                   src={getImageUrl("struggle")}
                   alt="Struggle Icon"
-                  className="w-full h-full object-cover rounded filter contrast-125"
+                  fill
+                  sizes="56px"
+                  className="object-cover rounded filter contrast-125"
                 />
               </div>
               <span className="text-xs font-mono text-text-muted tracking-wider">
@@ -192,11 +195,13 @@ export default function Features() {
           <div>
             {/* Icon Header */}
             <div className="flex items-center justify-between mb-8">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded overflow-hidden bg-bg-page border border-border-theme flex items-center justify-center p-1">
-                <img
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded overflow-hidden bg-bg-page border border-border-theme flex items-center justify-center p-1">
+                <Image
                   src={getImageUrl("faith")}
                   alt="Faith Icon"
-                  className="w-full h-full object-cover rounded filter contrast-125"
+                  fill
+                  sizes="56px"
+                  className="object-cover rounded filter contrast-125"
                 />
               </div>
               <span className="text-xs font-mono text-text-muted tracking-wider">
@@ -252,11 +257,13 @@ export default function Features() {
           <div>
             {/* Icon Header */}
             <div className="flex items-center justify-between mb-8">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded overflow-hidden bg-bg-page border border-border-theme flex items-center justify-center p-1">
-                <img
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded overflow-hidden bg-bg-page border border-border-theme flex items-center justify-center p-1">
+                <Image
                   src={getImageUrl("transcendence")}
                   alt="Transcendence Icon"
-                  className="w-full h-full object-cover rounded filter contrast-125"
+                  fill
+                  sizes="56px"
+                  className="object-cover rounded filter contrast-125"
                 />
               </div>
               <span className="text-xs font-mono text-text-muted tracking-wider">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ShoppingBag, Heart, Info, Store, User, Sun, Moon, Search } from "lucide-react";
@@ -69,10 +70,13 @@ export default function Navbar({ absolute = false }: NavbarProps) {
       >
         {/* LOGO */}
         <Link href="/" className="flex items-center gap-3">
-          <img
+          <Image
             src={theme === "light" ? "/logo-black.svg" : "/logo-white.svg"}
             alt="Ghubor Logo"
-            className="h-8 sm:h-9 md:h-10 object-contain transition-all duration-300 hover:scale-105"
+            width={150}
+            height={100}
+            priority
+            className="h-8 sm:h-9 md:h-10 w-auto object-contain transition-all duration-300 hover:scale-105"
           />
         </Link>
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, ShieldCheck, ShoppingBag, CornerDownRight, Check, Loader2, AlertCircle } from "lucide-react";
 import Navbar from "../../components/Navbar";
@@ -452,8 +453,8 @@ export default function CheckoutPage() {
             <div className="flex flex-col gap-4 max-h-[220px] overflow-y-auto pr-1">
               {cartItems.map((item) => (
                 <div key={`${item.product.id}-${item.size}`} className="flex gap-3 items-center border-b border-border-theme pb-3">
-                  <div className="w-12 h-15 rounded bg-bg-page/40 border border-border-theme overflow-hidden shrink-0">
-                    <img src={item.product.image} alt="" className="w-full h-full object-cover" />
+                  <div className="relative w-12 h-15 rounded bg-bg-page/40 border border-border-theme overflow-hidden shrink-0">
+                    <Image src={item.product.image} alt="" fill sizes="48px" className="object-cover" />
                   </div>
                   <div className="flex-grow min-w-0">
                     <h3 className="text-sm font-bold text-text-page truncate uppercase tracking-wider">{item.product.title}</h3>

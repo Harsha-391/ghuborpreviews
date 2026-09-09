@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Heart } from "lucide-react";
 import { products } from "../data/products";
 import { toggleWishlist, isInWishlist } from "../utils/store";
@@ -231,11 +232,12 @@ function ProductCard({ product }: { product: any }) {
           <Heart className={`w-3.5 h-3.5 transition-colors ${wishlisted ? "fill-red-600 text-red-600 border-none" : "text-primary/70"}`} />
         </button>
 
-        <img
-          src={getImageUrl("product-" + product.id, product.image) || undefined}
+        <Image
+          src={getImageUrl("product-" + product.id, product.image) || "/logo-white.svg"}
           alt={product.title}
-          loading="lazy"
-          className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-95 group-hover:brightness-100"
+          fill
+          sizes="320px"
+          className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-95 group-hover:brightness-100"
         />
 
         <div className="absolute inset-0 bg-gradient-to-t from-bg-page via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />

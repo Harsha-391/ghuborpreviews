@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, Phone, MapPin, Mail, ShieldAlert, Edit3, Check, Loader2, Calendar, FileText } from "lucide-react";
 import Navbar from "../../components/Navbar";
@@ -357,8 +358,8 @@ export default function ProfilePage() {
                     <div className="flex flex-col gap-3">
                       {order.items.map((item) => (
                         <div key={`${item.id}-${item.size}`} className="flex gap-3 items-center">
-                          <div className="w-10 h-12 rounded bg-bg-page/40 border border-border-theme overflow-hidden shrink-0">
-                            <img src={item.image} alt="" className="w-full h-full object-cover" />
+                          <div className="relative w-10 h-12 rounded bg-bg-page/40 border border-border-theme overflow-hidden shrink-0">
+                            <Image src={item.image} alt="" fill sizes="40px" className="object-cover" />
                           </div>
                           <div className="flex-grow min-w-0">
                             <h4 className="text-[10px] font-semibold text-text-page truncate uppercase tracking-wider">{item.title}</h4>

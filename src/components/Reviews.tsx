@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import { useImageConfig } from "./ImageConfigContext";
 
@@ -184,8 +185,8 @@ export default function Reviews() {
                       </div>
                       
                       {/* Active glyph */}
-                      <div className="w-6 h-6 opacity-20 group-hover:opacity-75 transition-opacity duration-500 filter invert brightness-125">
-                        <img src={getImageUrl("glyph")} alt="" className="w-full h-full object-contain" />
+                      <div className="relative w-6 h-6 opacity-20 group-hover:opacity-75 transition-opacity duration-500 filter invert brightness-125">
+                        <Image src={getImageUrl("glyph")} alt="" fill sizes="24px" className="object-contain" />
                       </div>
                     </div>
                   </div>

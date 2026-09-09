@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "./Navbar";
 import { useImageConfig } from "./ImageConfigContext";
 
@@ -25,16 +26,20 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
         {/* Background Image with Zoom & Dark Gradients */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <motion.div
-            initial={{ scale: 1.1, opacity: 0 }}
-            animate={loading ? {} : { scale: 1, opacity: 0.85 }}
+            initial={{ scale: 1.1 }}
+            animate={loading ? {} : { scale: 1 }}
             transition={{ duration: 2.5, ease: ease }}
-            style={{ willChange: "transform, opacity" }}
-            className="w-full h-full"
+            style={{ willChange: "transform", opacity: 0.85 }}
+            className="relative w-full h-full"
           >
-            <img
+            <Image
               src={getImageUrl("hero")}
               alt="Ghubor Hero Cinematic"
-              className="w-full h-full object-cover object-center filter brightness-95 contrast-105"
+              fill
+              priority
+              fetchPriority="high"
+              sizes="100vw"
+              className="object-cover object-center filter brightness-95 contrast-105"
             />
           </motion.div>
 

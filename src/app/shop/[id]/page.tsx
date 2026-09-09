@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, Shield, CornerDownRight, HelpCircle, Truck, RefreshCw, Heart, ZoomIn, ZoomOut, RotateCcw, X, Tag } from "lucide-react";
 import { products, Product } from "../../../data/products";
@@ -282,15 +283,22 @@ export default function ProductDetailPage() {
                 </span>
               </div>
 
-              <motion.img
+              <motion.div
                 key={activeImage}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
-                src={activeImage || undefined}
-                alt={galleryImages[activeIndex]?.alt || product.title}
-                className="w-full h-full object-cover object-center transition-transform duration-500 group-hover/image:scale-102"
-              />
+                className="relative w-full h-full transition-transform duration-500 group-hover/image:scale-102"
+              >
+                <Image
+                  src={activeImage || "/logo-white.svg"}
+                  alt={galleryImages[activeIndex]?.alt || product.title}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 58vw"
+                  className="object-cover object-center"
+                />
+              </motion.div>
             </div>
 
             {/* Thumbnail Navigation List */}
@@ -308,10 +316,12 @@ export default function ProductDetailPage() {
                       : "border-border-theme hover:border-text-muted"
                   }`}
                 >
-                  <img
-                    src={imgItem.url || undefined}
+                  <Image
+                    src={imgItem.url || "/logo-white.svg"}
                     alt={imgItem.alt || imgItem.label}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 768px) 64px, 80px"
+                    className="object-cover"
                   />
                   <div className="absolute inset-0 bg-black/10 hover:bg-transparent transition-colors" />
                 </button>
@@ -769,10 +779,12 @@ export default function ProductDetailPage() {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <motion.img
-                src={activeImage || undefined}
-                alt={galleryImages[activeIndex]?.alt || product?.title}
-                className="w-full h-full object-contain pointer-events-none"
+              <Image
+                src={activeImage || "/logo-white.svg"}
+                alt={galleryImages[activeIndex]?.alt || product?.title || ""}
+                fill
+                sizes="90vw"
+                className="object-contain pointer-events-none"
                 style={{
                   transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
                   transition: isDraggingRef.current || initialDistanceRef.current !== null ? "none" : "transform 0.2s ease-out"

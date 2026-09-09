@@ -3,8 +3,7 @@
  * Uploads to Storage under `uploads/{folder}/{timestamp}-{filename}` and returns the public download URL.
  */
 
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { storage } from "./firebase";
+import { app } from "./firebase";
 
 export type UploadFolder = "products" | "blog" | "categories" | "hero" | "pillars" | "details";
 
@@ -23,33 +22,33 @@ export interface UploadProgress {
  * @param onProgress - callback receiving upload progress
  * @returns Promise<string> — the public download URL
  */
-export function uploadImage(
+export async function uploadImage(
   file: File,
   folder: UploadFolder,
   theme: "dark" | "light" = "dark",
   onProgress?: (progress: UploadProgress) => void
 ): Promise<string> {
+  if (!app) {
+    throw new Error("Firebase Storage is not initialized. Check your .env.local config.");
+  }
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Only image files are accepted.");
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error("Image must be under 10MB.");
+  }
+
+  // Loaded on demand so firebase/storage never ships to public, non-admin pages.
+  const { getStorage, ref, uploadBytesResumable, getDownloadURL } = await import("firebase/storage");
+  const storage = getStorage(app);
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").replace(/\s+/g, "_");
+  const path = `uploads/${folder}/${theme}/${Date.now()}-${safeName}`;
+  const storageRef = ref(storage, path);
+
   return new Promise((resolve, reject) => {
-    if (!storage) {
-      reject(new Error("Firebase Storage is not initialized. Check your .env.local config."));
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      reject(new Error("Only image files are accepted."));
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      reject(new Error("Image must be under 10MB."));
-      return;
-    }
-
-    const ext = file.name.split(".").pop() || "jpg";
-    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").replace(/\s+/g, "_");
-    const path = `uploads/${folder}/${theme}/${Date.now()}-${safeName}`;
-    const storageRef = ref(storage, path);
-
     const uploadTask = uploadBytesResumable(storageRef, file, {
       contentType: file.type,
     });

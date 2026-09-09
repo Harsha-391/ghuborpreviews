@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, Heart } from "lucide-react";
 import { products } from "../../data/products";
@@ -163,10 +164,13 @@ function ShopProductCard({ product, idx, ease }: { product: any; idx: number; ea
           <Heart className={`w-4 h-4 transition-colors ${wishlisted ? "fill-red-600 text-red-600 border-none" : "text-primary/70"}`} />
         </button>
 
-        <img
-          src={getImageUrl("product-" + product.id, product.image) || undefined}
+        <Image
+          src={getImageUrl("product-" + product.id, product.image) || "/logo-white.svg"}
           alt={product.title}
-          className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-95 group-hover:brightness-100"
+          fill
+          priority={idx < 2}
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-95 group-hover:brightness-100"
         />
         
         {/* Overlay gradient */}

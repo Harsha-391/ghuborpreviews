@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, MapPin, Clock, ExternalLink, Shield, Package, RefreshCw, Truck } from "lucide-react";
 import { useImageConfig } from "./ImageConfigContext";
 
@@ -53,8 +54,8 @@ export default function Footer() {
         {/* ── Hero brand row ─────────────────────────────────────── */}
         <div className="pt-16 pb-12 border-b border-border-theme flex flex-col lg:flex-row items-start lg:items-end justify-between gap-8">
           <div className="flex items-center gap-5">
-            <div className="w-12 h-12 rounded overflow-hidden opacity-60 hover:opacity-100 transition-opacity duration-500 filter invert brightness-125 shrink-0">
-              <img src={getImageUrl("glyph")} alt="Gibbor Mark" className="w-full h-full object-contain" />
+            <div className="relative w-12 h-12 rounded overflow-hidden opacity-60 hover:opacity-100 transition-opacity duration-500 filter invert brightness-125 shrink-0">
+              <Image src={getImageUrl("glyph")} alt="Gibbor Mark" fill sizes="48px" className="object-contain" />
             </div>
             <div>
               <h2 className="font-blackletter text-3xl sm:text-4xl text-text-page leading-none tracking-wide">Ghubor</h2>
@@ -211,8 +212,8 @@ export default function Footer() {
           <div className="w-48 border border-border-theme rounded-lg p-3 bg-bg-card/80 backdrop-blur shadow-xl relative shrink-0">
             <div className="absolute top-0 right-0 w-2 h-2 bg-[#5C0606] rounded-full m-2 animate-pulse" />
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-bg-page flex items-center justify-center p-0.5 border border-border-theme shrink-0">
-                <img src={getImageUrl("tag")} alt="Tag Icon" className="w-full h-full object-cover filter contrast-125 brightness-90" />
+              <div className="relative w-8 h-8 rounded bg-bg-page flex items-center justify-center p-0.5 border border-border-theme shrink-0">
+                <Image src={getImageUrl("tag")} alt="Tag Icon" fill sizes="32px" className="object-cover filter contrast-125 brightness-90" />
               </div>
               <div className="text-left">
                 <p className="text-[7px] text-text-dim font-mono uppercase tracking-widest">GARMENT N°</p>
