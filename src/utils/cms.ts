@@ -17,7 +17,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { CMSProductImage, Product, products as staticProducts } from "../data/products";
+import { CMSProductImage, Product } from "../data/products";
 
 // ─── TYPE DEFINITIONS ────────────────────────────────────────────────────────
 
@@ -163,29 +163,21 @@ export function createEmptyProduct(): CMSProduct {
 }
 
 /**
- * The single source of truth for "what products does the storefront show".
- * Merges published Firestore CMS products (which the admin panel manages —
- * price, images, etc.) over the built-in `products.ts` catalog by id, so a
- * price edit in the admin shows up everywhere (shop, product page, cart,
- * checkout) instead of only on pages that happened to query Firestore
- * directly. Unpublished/draft CMS products are excluded.
+ * The single source of truth for "what products does the storefront show" —
+ * published Firestore CMS products only. There is no static/local catalog
+ * fallback: everything the storefront renders (shop, product page, cart,
+ * checkout) comes from `cms-products` in Firestore.
  */
 export async function fetchStorefrontProducts(): Promise<Product[]> {
   const cmsList = await fetchProducts();
-  const published = cmsList
+  return cmsList
     .filter((p) => p.published !== false)
     .map((p) => ({
       ...p,
       image: p.darkImage || p.lightImage || "",
       backImage: p.galleryDark?.[0] || p.galleryLight?.[0] || "",
-    })) as unknown as Product[];
-
-  const overriddenIds = new Set(published.map((p) => p.id));
-  const staticOnly = staticProducts.filter((p) => !overriddenIds.has(p.id));
-
-  return [...published, ...staticOnly].sort(
-    (a, b) => ((a as any).order ?? 99) - ((b as any).order ?? 99)
-  );
+    }))
+    .sort((a, b) => ((a as any).order ?? 99) - ((b as any).order ?? 99)) as unknown as Product[];
 }
 
 // ─── BLOG POSTS ──────────────────────────────────────────────────────────────

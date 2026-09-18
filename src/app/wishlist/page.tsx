@@ -7,18 +7,28 @@ import Image from "next/image";
 import { Heart, Trash2, ArrowRight, ShoppingBag } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { products, Product } from "../../data/products";
+import { Product } from "../../data/products";
 import { getWishlist, toggleWishlist } from "../../utils/store";
+import { fetchStorefrontProducts } from "../../utils/cms";
 
 export default function WishlistPage() {
   const ease = [0.16, 1, 0.3, 1] as const;
 
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [wishlistItems, setWishlistItems] = useState<Product[]>([]);
 
   useEffect(() => {
+    fetchStorefrontProducts()
+      .then(setAllProducts)
+      .catch((err) => console.warn("Failed to load storefront products on wishlist:", err));
+  }, []);
+
+  useEffect(() => {
+    if (allProducts.length === 0) return;
+
     const loadWishlist = () => {
       const ids = getWishlist();
-      const items = products.filter((p) => ids.includes(p.id));
+      const items = allProducts.filter((p) => ids.includes(p.id));
       setWishlistItems(items);
     };
 
@@ -27,7 +37,7 @@ export default function WishlistPage() {
     return () => {
       window.removeEventListener("wishlist-updated", loadWishlist);
     };
-  }, []);
+  }, [allProducts]);
 
   const handleRemove = (id: string) => {
     toggleWishlist(id);

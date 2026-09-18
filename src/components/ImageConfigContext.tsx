@@ -60,56 +60,6 @@ export const DEFAULT_IMAGE_CONFIGS: ImageConfigs = {
     darkUrl: "/images/details/scripture.webp",
     lightUrl: "/images/details/scripture-light.webp",
   },
-  "product-hoodie": {
-    label: "Sacred Shield Hoodie Image",
-    darkUrl: "/images/products/hoodie.webp",
-    lightUrl: "/images/products/hoodie-light.webp",
-  },
-  "product-jacket": {
-    label: "Silent Battle Field Jacket Image",
-    darkUrl: "/images/products/jacket.webp",
-    lightUrl: "/images/products/jacket-light.webp",
-  },
-  "product-longsleeve": {
-    label: "Modern Gibbor Mockneck Image",
-    darkUrl: "/images/products/longsleeve.webp",
-    lightUrl: "/images/products/longsleeve-light.webp",
-  },
-  "product-pants": {
-    label: "Sanctuary Work Pants Image",
-    darkUrl: "/images/products/pants.webp",
-    lightUrl: "/images/products/pants-light.webp",
-  },
-  "product-tshirt": {
-    label: "Scripture Fragment Tee Image",
-    darkUrl: "/images/products/tshirt.webp",
-    lightUrl: "/images/products/tshirt-light.webp",
-  },
-  "product-tshirt-back": {
-    label: "Scripture Fragment Tee Back Image",
-    darkUrl: "/images/products/tshirt-back.webp",
-    lightUrl: "/images/products/tshirt-back-light.webp",
-  },
-  "product-hoodie-back": {
-    label: "Sacred Shield Hoodie Back Image",
-    darkUrl: "/images/products/hoodie-back.webp",
-    lightUrl: "/images/products/hoodie-back-light.webp",
-  },
-  "product-jacket-back": {
-    label: "Silent Battle Field Jacket Back Image",
-    darkUrl: "/images/products/jacket-back.webp",
-    lightUrl: "/images/products/jacket-back-light.webp",
-  },
-  "product-longsleeve-back": {
-    label: "Modern Gibbor Mockneck Back Image",
-    darkUrl: "/images/products/longsleeve-back.webp",
-    lightUrl: "/images/products/longsleeve-back-light.webp",
-  },
-  "product-cap": {
-    label: "Faith Calligraphy Cap Image",
-    darkUrl: "/images/products/cap.webp",
-    lightUrl: "/images/products/cap-light.webp",
-  },
 };
 
 export function ImageConfigProvider({ children }: { children: React.ReactNode }) {

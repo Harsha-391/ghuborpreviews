@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Heart } from "lucide-react";
-import { products } from "../data/products";
+import { Product } from "../data/products";
 import { toggleWishlist, isInWishlist } from "../utils/store";
 import { fetchStorefrontProducts } from "../utils/cms";
 import { useImageConfig } from "./ImageConfigContext";
@@ -10,8 +10,8 @@ import { useImageConfig } from "./ImageConfigContext";
 export default function ProductLineup() {
   const ease = [0.16, 1, 0.3, 1] as const;
 
-  // Show only 6 products (we have exactly 6 in our data source)
-  const [lineupProducts, setLineupProducts] = useState(products.slice(0, 6));
+  // Show up to 6 products from Firestore
+  const [lineupProducts, setLineupProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     fetchStorefrontProducts()

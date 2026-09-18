@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, Shield, CornerDownRight, HelpCircle, Truck, RefreshCw, Heart, ZoomIn, ZoomOut, RotateCcw, X, Tag } from "lucide-react";
-import { products, Product } from "../../../data/products";
+import { Product } from "../../../data/products";
 import Navbar from "../../../components/Navbar";
 import MarqueeBanner from "../../../components/MarqueeBanner";
 import Footer from "../../../components/Footer";
@@ -27,8 +27,9 @@ export default function ProductDetailPage() {
   const { getImageUrl } = useImageConfig();
   const { theme } = useTheme();
 
-  // Dynamic Product State with local fallback
-  const [product, setProduct] = useState<Product | undefined>(() => products.find((p) => p.id === id));
+  // Product state — fetched from Firestore only, no local fallback
+  const [product, setProduct] = useState<Product | undefined>(undefined);
+  const [productLoading, setProductLoading] = useState(true);
 
   // States
   const [selectedSize, setSelectedSize] = useState<string>("M");
@@ -107,8 +108,9 @@ export default function ProductDetailPage() {
     fetchActiveCoupons().then(setActiveCoupons);
   }, []);
 
-  // Fetch from Firestore
+  // Fetch from Firestore — the only source of product data
   useEffect(() => {
+    setProductLoading(true);
     const fetchDbProduct = async () => {
       try {
         if (!db) return;
@@ -116,7 +118,7 @@ export default function ProductDetailPage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          if (data.published === false) return; // draft — keep showing the static fallback, if any
+          if (data.published === false) return; // draft — not shown on the storefront
           setProduct({
             id: docSnap.id,
             ...data,
@@ -125,7 +127,9 @@ export default function ProductDetailPage() {
           } as Product);
         }
       } catch (err) {
-        console.warn("Firestore product document query failed, using local product:", err);
+        console.warn("Firestore product document query failed:", err);
+      } finally {
+        setProductLoading(false);
       }
     };
     fetchDbProduct();
@@ -166,6 +170,14 @@ export default function ProductDetailPage() {
       router.push("/checkout");
     }
   };
+
+  if (productLoading) {
+    return (
+      <div className="min-h-screen bg-bg-page flex items-center justify-center text-primary font-mono text-xs uppercase tracking-widest">
+        Loading Sanctuary Archives...
+      </div>
+    );
+  }
 
   if (!product) {
     return (

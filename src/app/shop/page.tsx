@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, Heart } from "lucide-react";
-import { products } from "../../data/products";
+import { Product } from "../../data/products";
 import Navbar from "../../components/Navbar";
 import MarqueeBanner from "../../components/MarqueeBanner";
 import Footer from "../../components/Footer";
@@ -17,7 +17,8 @@ import { trackPageView, trackSearch } from "../../utils/analytics";
 
 function ShopContent() {
   const ease = [0.16, 1, 0.3, 1] as const;
-  const [displayProducts, setDisplayProducts] = useState(products);
+  const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const searchParams = useSearchParams();
   const q = searchParams.get("q") || "";
 
@@ -32,7 +33,8 @@ function ShopContent() {
   useEffect(() => {
     fetchStorefrontProducts()
       .then(setDisplayProducts)
-      .catch((err) => console.warn("Failed to load storefront products, using local fallback:", err));
+      .catch((err) => console.warn("Failed to load storefront products:", err))
+      .finally(() => setProductsLoading(false));
   }, []);
 
   const filteredProducts = displayProducts.filter((product) => {
@@ -80,7 +82,11 @@ function ShopContent() {
         </div>
 
         {/* 2-Column Product Grid ("in the row of twos") */}
-        {filteredProducts.length === 0 ? (
+        {productsLoading ? (
+          <div className="text-center py-24 border border-dashed border-border-theme rounded-3xl bg-bg-card/50">
+            <p className="text-sm font-mono text-text-muted uppercase tracking-widest">Loading Sanctuary Archives...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="text-center py-24 border border-dashed border-border-theme rounded-3xl bg-bg-card/50">
             <p className="text-sm font-mono text-text-muted uppercase tracking-widest">No matching artifacts found in the Sanctuary</p>
             <Link href="/shop" className="text-xs font-mono text-primary uppercase tracking-widest hover:text-white transition-colors mt-4 inline-block">

@@ -40,12 +40,6 @@ const PREMIUM_LIGHT_PRESETS: Record<string, string> = {
   glyph: "/images/details/glyph-light.webp",
   tag: "/images/details/tag-light.webp",
   scripture: "/images/details/scripture-light.webp",
-  "product-hoodie": "/images/products/hoodie-light.webp",
-  "product-jacket": "/images/products/jacket-light.webp",
-  "product-longsleeve": "/images/products/longsleeve-light.webp",
-  "product-pants": "/images/products/pants-light.webp",
-  "product-tshirt": "/images/products/tshirt-light.webp",
-  "product-cap": "/images/products/cap-light.webp",
 };
 
 /**
