@@ -3,6 +3,15 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(process.cwd()),
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+        pathname: "/v0/b/**",
+      },
+    ],
+  },
   async headers() {
     return [
       {
