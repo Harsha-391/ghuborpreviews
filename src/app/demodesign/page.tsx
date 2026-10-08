@@ -16,8 +16,22 @@ export default function DemoDesignPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // FlexCarousel reads images into a WebGL texture, which requires the browser
+  // to fetch them as CORS-clean (crossOrigin="anonymous"). Firebase Storage's
+  // bucket has no CORS configuration, so raw firebasestorage.googleapis.com
+  // URLs fail that check silently (card renders, texture stays the grey
+  // placeholder). Routing through Next's own image optimizer makes the request
+  // same-origin, which sidesteps CORS entirely without touching bucket config.
+  const toSameOrigin = (url: string) => {
+    if (!url) return url;
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return `/_next/image?url=${encodeURIComponent(url)}&w=1200&q=80`;
+    }
+    return url;
+  };
+
   const items = products.map((product) => ({
-    src: product.image || product.darkImage || product.lightImage || "/logo-white.svg",
+    src: toSameOrigin(product.image || product.darkImage || product.lightImage || "/logo-white.svg"),
     alt: product.title,
     title: product.title,
     subtitle: product.price,
