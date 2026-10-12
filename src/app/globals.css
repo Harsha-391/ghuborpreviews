@@ -1,19 +1,7 @@
 @import "tailwindcss";
 
+/* Ghubor is white/red/black only — no dark mode. */
 :root {
-  --bg-page: #000000;
-  --bg-card: #101010;
-  --bg-card-alt: #120b0b;
-  --bg-nav: #070202;
-  --text-page: #E1E0CC;
-  --text-muted: #9CA3AF;
-  --text-dim: #6B7280;
-  --color-primary: #DEDBC8;
-  --color-accent: #FFFFFF; /* Pure white accent on black for maximum contrast and legibility */
-  --border-color: rgba(255, 255, 255, 0.05);
-}
-
-html.light {
   --bg-page: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-card-alt: #F5F5F5;

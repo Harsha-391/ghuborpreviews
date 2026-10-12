@@ -63,12 +63,13 @@ export default function FeaturedCarouselSection() {
           bend={0.34}
           reach={0.38}
           curl="twist"
-          dispersion={0.45}
+          dispersion={0}
           liquid={0}
           followCursor={false}
           autoplay
           interval={3}
           captureWheel={false}
+          maxDpr={1.5}
         />
       </div>
     </section>

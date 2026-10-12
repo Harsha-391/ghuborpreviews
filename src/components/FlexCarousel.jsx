@@ -245,6 +245,7 @@ const FlexCarousel = ({
   interval = 4,
   captions = true,
   captureWheel = true,
+  maxDpr = 2,
   onChange,
   onSelect,
   className = '',
@@ -288,7 +289,8 @@ const FlexCarousel = ({
       focusOnClick,
       autoplay,
       interval,
-      captureWheel
+      captureWheel,
+      maxDpr
     };
     engineRef.current?.wake();
   });
@@ -302,7 +304,7 @@ const FlexCarousel = ({
     if (!container) return undefined;
 
     const renderer = new Renderer({
-      dpr: Math.min(window.devicePixelRatio || 1, 2),
+      dpr: Math.min(window.devicePixelRatio || 1, settingsRef.current?.maxDpr ?? 2),
       alpha: true,
       premultipliedAlpha: true,
       antialias: false,
@@ -659,7 +661,8 @@ const FlexCarousel = ({
     const resize = () => {
       width = Math.max(1, container.clientWidth);
       height = Math.max(1, container.clientHeight);
-      renderer.dpr = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(PIXEL_BUDGET / (width * height)));
+      const cap = settingsRef.current?.maxDpr ?? 2;
+      renderer.dpr = Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(PIXEL_BUDGET / (width * height)));
       renderer.setSize(width, height);
       target.setSize(Math.max(2, Math.round(width * renderer.dpr)), Math.max(2, Math.round(height * renderer.dpr)));
       lensUniforms.tScene.value = target.texture;
@@ -1081,7 +1084,7 @@ const FlexCarousel = ({
 
     const onWheel = e => {
       const s = settingsRef.current;
-      if (!s || e.ctrlKey) return;
+      if (!s || e.ctrlKey || !s.captureWheel) return;
       let dx = e.deltaX;
       let dy = e.deltaY;
       if (e.shiftKey && Math.abs(dx) < Math.abs(dy)) {
@@ -1090,7 +1093,6 @@ const FlexCarousel = ({
       }
       const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? height : 1;
       const horizontal = Math.abs(dx) > Math.abs(dy);
-      if (!horizontal && !s.captureWheel) return;
       e.preventDefault();
       skipIntro();
       interactedAt = performance.now();

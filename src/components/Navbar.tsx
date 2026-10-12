@@ -5,9 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ShoppingBag, Heart, Info, Store, User, Sun, Moon, Search } from "lucide-react";
+import { Menu, X, ShoppingBag, Heart, Info, Store, User, Search } from "lucide-react";
 import { useAuth } from "./AuthContext";
-import { useTheme } from "./ThemeContext";
 
 interface NavbarProps {
   absolute?: boolean;
@@ -22,7 +21,6 @@ export default function Navbar({ absolute = false }: NavbarProps) {
   const [wishlistCount, setWishlistCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
   const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const updateCounts = () => {
@@ -71,7 +69,7 @@ export default function Navbar({ absolute = false }: NavbarProps) {
         {/* LOGO */}
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src={theme === "light" ? "/logo-black.svg" : "/logo-white.svg"}
+            src="/logo-black.svg"
             alt="Ghubor Logo"
             width={150}
             height={100}
@@ -119,15 +117,6 @@ export default function Navbar({ absolute = false }: NavbarProps) {
           >
             <Search className="w-4.5 h-4.5 text-primary" />
           </button>
-
-          {/* Theme Toggle Button */}
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-bg-card-alt text-text-muted hover:text-primary transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
-            aria-label="Toggle Theme"
-          >
-            {theme === "dark" ? <Sun className="w-4.5 h-4.5 text-primary" /> : <Moon className="w-4.5 h-4.5 text-primary" />}
-          </button>
         </div>
 
         {/* MOBILE HAMBURGER BUTTON & THEME TOGGLE */}
@@ -138,13 +127,6 @@ export default function Navbar({ absolute = false }: NavbarProps) {
             aria-label="Toggle Search Bar"
           >
             <Search className="w-4.5 h-4.5" />
-          </button>
-          <button
-            onClick={toggleTheme}
-            className="text-primary hover:text-white p-1.5 cursor-pointer transition-colors bg-transparent border-none outline-none"
-            aria-label="Toggle Theme"
-          >
-            {theme === "dark" ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
           </button>
 
           {/* Persistent Cart Icon */}
