@@ -4,6 +4,7 @@ import MarqueeBanner from "./MarqueeBanner";
 import Hero from "./Hero";
 import About from "./About";
 import Features from "./Features";
+import FeaturedCarouselSection from "./FeaturedCarouselSection";
 import ProductLineup from "./ProductLineup";
 import Reviews from "./Reviews";
 import Footer from "./Footer";
@@ -17,6 +18,7 @@ export default function MainLayout() {
 
       {/* Sections */}
       <Hero />
+      <FeaturedCarouselSection />
       <ProductLineup />
       <About />
       <Features />

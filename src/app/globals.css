@@ -14,15 +14,15 @@
 }
 
 html.light {
-  --bg-page: #F9F8F3;
+  --bg-page: #FFFFFF;
   --bg-card: #FFFFFF;
-  --bg-card-alt: #F2F1EA;
-  --bg-nav: #EAE8DF;
-  --text-page: #070202;
+  --bg-card-alt: #F5F5F5;
+  --bg-nav: #FFFFFF;
+  --text-page: #0A0A0A;
   --text-muted: #4B5563;
   --text-dim: #6B7280;
-  --color-primary: #5C0606; /* Premium oxblood primary for light theme */
-  --color-accent: #000000; /* Crisp black accent on white */
+  --color-primary: #5C0606; /* Deep red brand accent */
+  --color-accent: #000000; /* Black accent for buttons/identity */
   --border-color: rgba(0, 0, 0, 0.08);
 }
 
@@ -56,6 +56,14 @@ html.light {
 /* Global transitions for buttery theme switches */
 body, div, section, header, footer, nav, a, button, p, span, h1, h2, h3, h4, h5, h6, input, select, textarea, table, tr, td, th {
   transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, text-shadow 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* Fades content near the left/right edges instead of hard-clipping it —
+   used to soften WebGL/overflow boundaries (e.g. the liquid carousel) so
+   warped card edges taper off instead of getting cut off abruptly. */
+.edge-fade-mask {
+  mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
 }
 
 .animate-marquee {

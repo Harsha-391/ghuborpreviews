@@ -13,20 +13,15 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const [theme, setThemeState] = useState<Theme>("light");
 
   useEffect(() => {
-    // Determine initial theme on mount
+    // White/red/black is the brand default now — only respect an explicit
+    // saved preference, rather than falling back to system dark-mode.
     const savedTheme = localStorage.getItem("ghubor-theme") as Theme | null;
-    if (savedTheme === "light" || savedTheme === "dark") {
-      setThemeState(savedTheme);
-      applyTheme(savedTheme);
-    } else {
-      const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const initialTheme = systemPrefersDark ? "dark" : "light";
-      setThemeState(initialTheme);
-      applyTheme(initialTheme);
-    }
+    const initialTheme = savedTheme === "dark" ? "dark" : "light";
+    setThemeState(initialTheme);
+    applyTheme(initialTheme);
   }, []);
 
   const applyTheme = (t: Theme) => {
