@@ -48,20 +48,20 @@ export default function MarqueeBanner() {
       style={{ transform: "translate3d(0,0,0)", backfaceVisibility: "hidden" }}
     >
       {items.map((item, idx) => (
-        <span 
-          key={idx} 
-          className="flex items-center gap-8 text-[9px] sm:text-xs font-light tracking-[0.25em] uppercase text-[#DEDBC8]/90"
+        <span
+          key={idx}
+          className="flex items-center gap-8 text-[9px] sm:text-xs font-light tracking-[0.25em] uppercase text-text-page/85"
           style={{ transform: "translate3d(0,0,0)", backfaceVisibility: "hidden" }}
         >
           <span>{item}</span>
-          <span className="text-[#5C0606] text-xs select-none">•</span>
+          <span className="text-primary text-xs select-none">•</span>
         </span>
       ))}
     </div>
   );
 
   return (
-    <div className="w-full bg-[#080202] border-b border-white/5 py-2.5 overflow-hidden select-none relative z-[100] flex">
+    <div className="w-full bg-bg-page border-b border-border-theme py-2.5 overflow-hidden select-none relative z-[100] flex">
       {/* Dynamic Keyframes using pixel-based animation instead of percentage translation to prevent browser rounding jitter at 120 FPS */}
       {offsetWidth > 0 && (
         <style dangerouslySetInnerHTML={{ __html: `

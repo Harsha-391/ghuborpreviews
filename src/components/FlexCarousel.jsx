@@ -400,7 +400,7 @@ const FlexCarousel = ({
     let dirty = true;
     let activeIndex = -1;
     let interactedAt = -Infinity;
-    let autoplayAt = performance.now();
+    let autoplayTimer = 0;
     let hasFocus = false;
     let deform = 0;
     let deformVel = 0;
@@ -565,6 +565,37 @@ const FlexCarousel = ({
       mode = 'spring';
       dirty = true;
       start();
+    };
+
+    // Autoplay is driven by its own cheap timer instead of a per-frame poll,
+    // so the WebGL render loop (frame()) can actually go idle between ticks
+    // rather than rendering the full scene on every frame forever just to
+    // check "is it time yet?" — that constant GPU/main-thread churn was the
+    // main source of jank/jitter while autoplay was on.
+    const scheduleAutoplay = () => {
+      clearTimeout(autoplayTimer);
+      const s = settingsRef.current;
+      if (!alive || !s || !s.autoplay || reducedMotion) return;
+      autoplayTimer = setTimeout(() => {
+        const s2 = settingsRef.current;
+        if (
+          alive &&
+          s2 &&
+          s2.autoplay &&
+          introState.done &&
+          focus.target === 0 &&
+          focus.t < 0.01 &&
+          !pointer.over &&
+          !pointer.down &&
+          !hasFocus &&
+          mode === 'spring' &&
+          Math.abs(goal - pos) < 1 &&
+          performance.now() - interactedAt > 3000
+        ) {
+          step(metrics(s2), 1);
+        }
+        scheduleAutoplay();
+      }, Math.max(500, s.interval * 1000));
     };
 
     const goTo = (m, index) => {
@@ -760,25 +791,6 @@ const FlexCarousel = ({
         if (current === focus.pending) openFocus(current);
         else focus.pending = -1;
       }
-
-      if (
-        s.autoplay &&
-        !reducedMotion &&
-        introState.done &&
-        focus.target === 0 &&
-        focus.t < 0.01 &&
-        !pointer.over &&
-        !pointer.down &&
-        !hasFocus &&
-        mode === 'spring' &&
-        Math.abs(goal - pos) < 1 &&
-        now - interactedAt > 3000 &&
-        now - autoplayAt > s.interval * 1000
-      ) {
-        autoplayAt = now;
-        step(m, 1);
-      }
-      if (s.autoplay && !reducedMotion) animating = true;
 
       const travel = Math.abs(pos - lastPos) / dt;
       lastPos = pos;
@@ -1189,12 +1201,14 @@ const FlexCarousel = ({
 
     resize();
     setItems(itemsRef.current);
+    scheduleAutoplay();
 
     return () => {
       alive = false;
       visible = false;
       engineRef.current = null;
       cancelAnimationFrame(raf);
+      clearTimeout(autoplayTimer);
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
       if (interactive) {
@@ -1227,6 +1241,12 @@ const FlexCarousel = ({
         ...style,
         '--flex-carousel-half': `${Math.min(Math.max(cardHeight, 0.05), 1) * 50}%`,
         cursor: interactive ? undefined : "default",
+        // Belt-and-suspenders: when non-interactive, remove this element (and
+        // everything inside it — pointer-events inherits) from hit-testing
+        // entirely, from the very first paint. A scroll/click/touch over it
+        // then targets whatever is underneath (the page), so there's no
+        // dependency on JS having attached (or not attached) any listener.
+        pointerEvents: interactive ? undefined : "none",
       }}
       role="region"
       aria-roledescription="carousel"
