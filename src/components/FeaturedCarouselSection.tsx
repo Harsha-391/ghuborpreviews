@@ -52,7 +52,7 @@ export default function FeaturedCarouselSection() {
           cardHeight={0.5}
           gap={12}
           squeeze={0.2}
-          focusOnClick
+          focusOnClick={false}
           captions
           fit="natural"
           radius={0}
@@ -70,6 +70,7 @@ export default function FeaturedCarouselSection() {
           interval={3}
           captureWheel={false}
           maxDpr={1.5}
+          interactive={false}
         />
       </div>
     </section>

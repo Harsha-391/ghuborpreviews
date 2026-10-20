@@ -246,6 +246,7 @@ const FlexCarousel = ({
   captions = true,
   captureWheel = true,
   maxDpr = 2,
+  interactive = true,
   onChange,
   onSelect,
   className = '',
@@ -1148,15 +1149,26 @@ const FlexCarousel = ({
       if (!document.hidden) start();
     };
 
-    container.addEventListener('pointerdown', onPointerDown);
-    container.addEventListener('pointermove', onPointerMove);
-    container.addEventListener('pointerup', onPointerUp);
-    container.addEventListener('pointerleave', onPointerLeave);
-    container.addEventListener('pointercancel', onPointerCancel);
-    container.addEventListener('wheel', onWheel, { passive: false });
-    container.addEventListener('keydown', onKeyDown);
-    container.addEventListener('focus', onFocus);
-    container.addEventListener('blur', onBlur);
+    // When not interactive (e.g. a passive autoplay-only homepage embed), skip
+    // every pointer/wheel/key listener entirely — not just no-op them — so
+    // there is zero chance of this component ever intercepting a scroll or
+    // drag gesture meant for the page. Autoplay itself never depends on
+    // these listeners, it's driven purely by the rAF physics loop below.
+    if (interactive) {
+      container.addEventListener('pointerdown', onPointerDown);
+      container.addEventListener('pointermove', onPointerMove);
+      container.addEventListener('pointerup', onPointerUp);
+      container.addEventListener('pointerleave', onPointerLeave);
+      container.addEventListener('pointercancel', onPointerCancel);
+      // Passive when this instance never hijacks wheel input, so the browser
+      // never has to wait on the main thread before scrolling the page —
+      // otherwise a non-passive listener can stall page scroll while the
+      // WebGL frame loop is busy, even though the handler itself no-ops.
+      container.addEventListener('wheel', onWheel, { passive: !captureWheel });
+      container.addEventListener('keydown', onKeyDown);
+      container.addEventListener('focus', onFocus);
+      container.addEventListener('blur', onBlur);
+    }
     document.addEventListener('visibilitychange', onVisibility);
 
     const resizeObserver = new ResizeObserver(resize);
@@ -1185,15 +1197,17 @@ const FlexCarousel = ({
       cancelAnimationFrame(raf);
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
-      container.removeEventListener('pointerdown', onPointerDown);
-      container.removeEventListener('pointermove', onPointerMove);
-      container.removeEventListener('pointerup', onPointerUp);
-      container.removeEventListener('pointerleave', onPointerLeave);
-      container.removeEventListener('pointercancel', onPointerCancel);
-      container.removeEventListener('wheel', onWheel);
-      container.removeEventListener('keydown', onKeyDown);
-      container.removeEventListener('focus', onFocus);
-      container.removeEventListener('blur', onBlur);
+      if (interactive) {
+        container.removeEventListener('pointerdown', onPointerDown);
+        container.removeEventListener('pointermove', onPointerMove);
+        container.removeEventListener('pointerup', onPointerUp);
+        container.removeEventListener('pointerleave', onPointerLeave);
+        container.removeEventListener('pointercancel', onPointerCancel);
+        container.removeEventListener('wheel', onWheel);
+        container.removeEventListener('keydown', onKeyDown);
+        container.removeEventListener('focus', onFocus);
+        container.removeEventListener('blur', onBlur);
+      }
       document.removeEventListener('visibilitychange', onVisibility);
       slots.forEach(slot => slot.dispose());
       slots = [];
@@ -1209,11 +1223,15 @@ const FlexCarousel = ({
     <div
       ref={containerRef}
       className={`flex-carousel ${className}`.trim()}
-      style={{ ...style, '--flex-carousel-half': `${Math.min(Math.max(cardHeight, 0.05), 1) * 50}%` }}
+      style={{
+        ...style,
+        '--flex-carousel-half': `${Math.min(Math.max(cardHeight, 0.05), 1) * 50}%`,
+        cursor: interactive ? undefined : "default",
+      }}
       role="region"
       aria-roledescription="carousel"
       aria-label="Image carousel"
-      tabIndex={0}
+      tabIndex={interactive ? 0 : undefined}
     >
       {captions && current && revealed && (
         <div className="flex-carousel__caption" aria-hidden="true">
