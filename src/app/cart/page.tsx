@@ -170,7 +170,7 @@ export default function CartPage() {
       <div className="absolute top-[20%] left-[-10%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[140px] pointer-events-none z-0" />
 
       {/* Global Navbar */}
-      <Navbar absolute={false} />
+      <Navbar />
 
       <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
         {/* Header */}

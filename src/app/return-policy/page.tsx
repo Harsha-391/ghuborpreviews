@@ -87,7 +87,7 @@ export default function ReturnPolicyPage() {
       <div className="absolute top-[15%] right-[-10%] w-[400px] h-[400px] bg-red-950/10 rounded-full blur-[140px] pointer-events-none z-0" />
       <div className="absolute bottom-[20%] left-[-10%] w-[350px] h-[350px] bg-red-900/5 rounded-full blur-[140px] pointer-events-none z-0" />
 
-      <Navbar absolute={false} />
+      <Navbar />
 
       <main className="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
 

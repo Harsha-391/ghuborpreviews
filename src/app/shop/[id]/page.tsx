@@ -265,11 +265,9 @@ export default function ProductDetailPage() {
       <div className="absolute top-[20%] left-[-15%] w-[400px] h-[400px] bg-red-950/15 rounded-full blur-[140px] pointer-events-none z-0" />
       <div className="absolute top-[40%] right-[-10%] w-[350px] h-[350px] bg-red-900/5 rounded-full blur-[130px] pointer-events-none z-0" />
 
-      {/* Promo announcement */}
+      {/* Global Navbar, then the promo line beneath it */}
+      <Navbar />
       <MarqueeBanner />
-
-      {/* Global Navbar */}
-      <Navbar absolute={false} />
 
       {/* Main product showcase structure (Amazon style) */}
       <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">

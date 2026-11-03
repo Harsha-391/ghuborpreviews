@@ -57,7 +57,7 @@ export default function Hero({ loading = false }: { loading?: boolean }) {
       </div>
 
       {/* Navbar */}
-      <Navbar absolute={true} />
+      <Navbar variant="transparent" />
 
       {/* Spacer for Navbar overlay */}
       <div className="w-full h-16 sm:h-20 md:h-24 pointer-events-none" />

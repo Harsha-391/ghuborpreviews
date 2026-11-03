@@ -1,267 +1,292 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ShoppingBag, Heart, Info, Store, User, Search } from "lucide-react";
+import { Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { useAuth } from "./AuthContext";
 
 interface NavbarProps {
+  /**
+   * "transparent" floats over a hero and turns solid once the element marked
+   * `data-header-sentinel` scrolls under the header. "solid" is for every other page.
+   */
+  variant?: "transparent" | "solid";
+  /** @deprecated Ignored. Kept so pages that still pass it keep compiling. */
   absolute?: boolean;
 }
 
-export default function Navbar({ absolute = false }: NavbarProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+const ICON = { size: 18, strokeWidth: 1.5 } as const;
+
+function readCounts() {
+  try {
+    const wishlist = JSON.parse(localStorage.getItem("ghubor-wishlist") || "[]");
+    const cart = JSON.parse(localStorage.getItem("ghubor-cart") || "[]");
+    return {
+      wishlist: Array.isArray(wishlist) ? wishlist.length : 0,
+      cart: Array.isArray(cart) ? cart.reduce((acc: number, item: { qty?: number }) => acc + (item.qty || 0), 0) : 0,
+    };
+  } catch {
+    return { wishlist: 0, cart: 0 };
+  }
+}
+
+export default function Navbar({ variant = "solid" }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [wishlistCount, setWishlistCount] = useState(0);
-  const [cartCount, setCartCount] = useState(0);
   const { user } = useAuth();
 
+  const [pastHero, setPastHero] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [counts, setCounts] = useState({ wishlist: 0, cart: 0 });
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Badge counts come from localStorage and are refreshed by the store events.
   useEffect(() => {
-    const updateCounts = () => {
-      if (typeof window !== "undefined") {
-        const wishlist = localStorage.getItem("ghubor-wishlist");
-        const cart = localStorage.getItem("ghubor-cart");
-
-        const wishlistItems = wishlist ? JSON.parse(wishlist) : [];
-        setWishlistCount(wishlistItems.length);
-
-        const cartItems = cart ? JSON.parse(cart) : [];
-        const totalItems = cartItems.reduce((acc: number, item: any) => acc + item.qty, 0);
-        setCartCount(totalItems);
-      }
-    };
-
-    updateCounts();
-
-    window.addEventListener("wishlist-updated", updateCounts);
-    window.addEventListener("cart-updated", updateCounts);
-
+    const update = () => setCounts(readCounts());
+    update();
+    window.addEventListener("wishlist-updated", update);
+    window.addEventListener("cart-updated", update);
     return () => {
-      window.removeEventListener("wishlist-updated", updateCounts);
-      window.removeEventListener("cart-updated", updateCounts);
+      window.removeEventListener("wishlist-updated", update);
+      window.removeEventListener("cart-updated", update);
     };
   }, []);
 
-  const navLinks = [
-    { id: "shop", name: "Shop", href: "/shop", icon: Store },
-    { id: "about", name: "About", href: "/about", icon: Info },
-    { id: "auth", name: user ? "Covenant" : "Sign In", href: user ? "/profile" : "/login", icon: User },
-    { id: "wishlist", name: "Wishlist", href: "/wishlist", icon: Heart, badge: wishlistCount > 0 },
-    { id: "cart", name: "Cart", href: "/cart", icon: ShoppingBag, count: cartCount },
+  // Transparent → solid without scroll listeners: one observer on a sentinel
+  // near the bottom of the hero; state only changes when it crosses the header.
+  useEffect(() => {
+    if (variant !== "transparent") return;
+    const sentinel = document.querySelector("[data-header-sentinel]");
+    if (!sentinel) {
+      setPastHero(true);
+      return;
+    }
+    const headerH = window.matchMedia("(min-width: 768px)").matches ? 80 : 64;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPastHero(!entry.isIntersecting && entry.boundingClientRect.top < headerH),
+      { rootMargin: `-${headerH}px 0px 0px 0px` }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [variant]);
+
+  // Overlays: Escape closes, page scroll is locked while one is open.
+  useEffect(() => {
+    if (!menuOpen && !searchOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        setSearchOpen(false);
+      }
+    };
+    const root = document.documentElement;
+    const prevOverflow = root.style.overflow;
+    root.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      root.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen, searchOpen]);
+
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
+
+  // Close overlays on navigation.
+  useEffect(() => {
+    setMenuOpen(false);
+    setSearchOpen(false);
+  }, [pathname]);
+
+  const solid = variant === "solid" || pastHero || menuOpen;
+  const accountHref = user ? "/profile" : "/login";
+  const accountLabel = user ? "Account" : "Sign in";
+
+  const iconBtn = `relative inline-flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full ring-1 ring-inset transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${
+    solid
+      ? "bg-black/[0.04] ring-black/[0.08] hover:bg-black/[0.08]"
+      : "bg-white/10 ring-white/[0.18] hover:bg-white/20"
+  }`;
+
+  const textLink = (href: string) =>
+    `text-[11px] tracking-[0.25em] uppercase py-2 underline-offset-[10px] decoration-1 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current ${
+      pathname === href ? "underline" : ""
+    }`;
+
+  const mobileLinks = [
+    { name: "Shop", href: "/shop" },
+    { name: "About", href: "/about" },
+    { name: user ? "Covenant" : "Sign In", href: accountHref },
+    { name: "Wishlist", href: "/wishlist" },
+    { name: `Cart${counts.cart > 0 ? ` (${counts.cart})` : ""}`, href: "/cart" },
   ];
 
-  const toggleMenu = () => setIsOpen(!isOpen);
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    router.push(`/shop?q=${encodeURIComponent(q)}`);
+    setSearchOpen(false);
+  };
 
   return (
     <>
-      <nav
-        className={`${absolute
-            ? "absolute top-0 left-0 right-0 bg-gradient-to-b from-bg-page/80 via-bg-page/40 to-transparent border-b border-border-theme"
-            : "relative bg-bg-nav border-b border-border-theme"
-          } z-[999] w-full bg-bg-nav/90 backdrop-blur-md px-6 py-4 md:px-12 flex items-center justify-between transition-all duration-300 select-none`}
+      <header
+        data-state={solid ? "solid" : "transparent"}
+        className={`fixed inset-x-0 top-0 z-50 h-[var(--header-h)] border-b select-none transition-colors duration-200 ${
+          solid ? "bg-white text-black border-border-theme" : "bg-transparent text-white border-transparent"
+        }`}
       >
-        {/* LOGO */}
-        <Link href="/" className="flex items-center gap-3">
-          <Image
-            src="/logo-black.svg"
-            alt="Ghubor Logo"
-            width={150}
-            height={100}
-            priority
-            className="h-8 sm:h-9 md:h-10 w-auto object-contain transition-all duration-300 hover:scale-105"
-          />
-        </Link>
+        <nav
+          aria-label="Primary"
+          className="mx-auto grid h-full max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 md:px-10"
+        >
+          {/* Left: links (desktop) / menu toggle (mobile) */}
+          <div className="flex items-center gap-8">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-menu"
+              className={`${iconBtn} md:hidden`}
+            >
+              {menuOpen ? <X {...ICON} /> : <Menu {...ICON} />}
+            </button>
+            <Link href="/shop" className={`hidden md:inline ${textLink("/shop")}`}>
+              Shop
+            </Link>
+            <Link href="/about" className={`hidden md:inline ${textLink("/about")}`}>
+              About
+            </Link>
+          </div>
 
-        {/* DESKTOP LINKS (Monospace styling with active underline indicator) */}
-        <div className="hidden md:flex items-center gap-8 lg:gap-12">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.id}
-                href={link.href}
-                className={`font-mono text-[10px] lg:text-xs tracking-[0.25em] uppercase transition-all duration-300 relative py-1.5 flex items-center gap-2 ${isActive ? "text-primary font-medium" : "text-text-muted hover:text-primary"
-                  }`}
-              >
-                <span>{link.name}</span>
-                {link.id === "wishlist" && link.badge && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(222,219,200,0.6)] animate-pulse" />
-                )}
-                {link.id === "cart" && link.count !== undefined && link.count > 0 && (
-                  <span className="px-1.5 py-0.5 text-[8px] font-mono leading-none bg-primary text-bg-page rounded-full font-bold shadow-[0_0_6px_rgba(222,219,200,0.3)]">
-                    {link.count}
-                  </span>
-                )}
-                {isActive && (
-                  <motion.div
-                    layoutId="activeNavIndicator"
-                    className="absolute bottom-[-3px] left-0 right-0 h-[1px] bg-primary"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-              </Link>
-            );
-          })}
-
-          {/* Search Button */}
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className="p-2 rounded-full hover:bg-bg-card-alt text-text-muted hover:text-primary transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
-            aria-label="Toggle Search Bar"
-          >
-            <Search className="w-4.5 h-4.5 text-primary" />
-          </button>
-        </div>
-
-        {/* MOBILE HAMBURGER BUTTON & THEME TOGGLE */}
-        <div className="md:hidden flex items-center gap-4">
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className="text-primary hover:text-white p-1.5 cursor-pointer transition-colors bg-transparent border-none outline-none"
-            aria-label="Toggle Search Bar"
-          >
-            <Search className="w-4.5 h-4.5" />
-          </button>
-
-          {/* Persistent Cart Icon */}
-          <Link
-            href="/cart"
-            className="text-primary hover:text-white p-1.5 transition-colors relative"
-            aria-label="View Cart"
-          >
-            <ShoppingBag className="w-4.5 h-4.5" />
-            {cartCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 px-1 py-0.5 text-[7px] font-mono leading-none bg-primary text-bg-page rounded-full font-bold shadow-[0_0_4px_rgba(222,219,200,0.5)]">
-                {cartCount}
-              </span>
-            )}
+          {/* Center: logo. Both variants are stacked so the switch is an opacity change, not a new download. */}
+          <Link href="/" aria-label="Ghubor home" className="relative block h-12 w-[72px] md:h-16 md:w-24">
+            <Image
+              src="/logo-white.svg"
+              alt=""
+              fill
+              priority
+              sizes="96px"
+              className={`object-contain transition-opacity duration-200 ${solid ? "opacity-0" : "opacity-100"}`}
+            />
+            <Image
+              src="/logo-black.svg"
+              alt=""
+              fill
+              priority
+              sizes="96px"
+              className={`object-contain transition-opacity duration-200 ${solid ? "opacity-100" : "opacity-0"}`}
+            />
           </Link>
 
+          {/* Right: hanging icon cluster, sitting a few px below the link baseline. */}
+          <div className="flex translate-y-1 items-center justify-end gap-1.5 md:gap-2">
+            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className={iconBtn}>
+              <Search {...ICON} />
+            </button>
+            <Link href={accountHref} aria-label={accountLabel} className={`${iconBtn} hidden md:inline-flex`}>
+              <User {...ICON} />
+            </Link>
+            <Link
+              href="/wishlist"
+              aria-label={counts.wishlist > 0 ? `Wishlist, ${counts.wishlist} saved` : "Wishlist"}
+              className={`${iconBtn} hidden md:inline-flex`}
+            >
+              <Heart {...ICON} />
+              {counts.wishlist > 0 && (
+                <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
+              )}
+            </Link>
+            <Link
+              href="/cart"
+              aria-label={`Cart, ${counts.cart} ${counts.cart === 1 ? "item" : "items"}`}
+              className={`${iconBtn} !w-auto gap-1.5 px-3 md:px-3.5`}
+            >
+              <ShoppingBag {...ICON} />
+              <span className="min-w-[1ch] text-[11px] leading-none tabular-nums">{counts.cart}</span>
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      {/* Solid pages reserve the header's height so content never sits under it. */}
+      {variant === "solid" && <div aria-hidden className="h-[var(--header-h)]" />}
+
+      {/* Mobile menu: full-screen white sheet under the header, opacity only. */}
+      <div
+        id="mobile-menu"
+        aria-hidden={!menuOpen}
+        inert={!menuOpen}
+        className={`fixed inset-0 z-40 flex flex-col bg-white px-6 pb-10 pt-[calc(var(--header-h)+2.5rem)] transition-[opacity,visibility] duration-200 md:hidden ${
+          menuOpen ? "visible opacity-100" : "invisible opacity-0"
+        }`}
+      >
+        <ul className="flex flex-col gap-5">
+          {mobileLinks.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className={`font-serif italic text-4xl font-light leading-tight ${
+                  pathname === link.href ? "text-primary" : "text-black"
+                }`}
+              >
+                {link.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-auto border-t border-border-theme pt-5 text-center text-[10px] uppercase tracking-[0.25em] text-text-dim">
+          GHUBOR © 2026. FOR THE MODERN GIBBOR.
+        </p>
+      </div>
+
+      {/* Search overlay: opacity only, keeps the /shop?q= behaviour. */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search"
+        aria-hidden={!searchOpen}
+        inert={!searchOpen}
+        className={`fixed inset-0 z-[60] bg-white transition-[opacity,visibility] duration-150 ${
+          searchOpen ? "visible opacity-100" : "invisible opacity-0"
+        }`}
+      >
+        <div className="mx-auto flex h-[var(--header-h)] max-w-[1600px] items-center justify-end px-4 md:px-10">
           <button
-            onClick={toggleMenu}
-            aria-label="Toggle Menu"
-            className="text-primary hover:text-white p-1.5 cursor-pointer transition-colors bg-transparent border-none outline-none"
+            type="button"
+            onClick={() => setSearchOpen(false)}
+            aria-label="Close search"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/[0.04] ring-1 ring-inset ring-black/[0.08] hover:bg-black/[0.08] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
           >
-            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            <X {...ICON} />
           </button>
         </div>
-
-        {/* MOBILE MENU OVERLAY (Full-width Dropdown) */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute top-full left-0 right-0 w-full bg-bg-nav/98 backdrop-blur-xl border-t border-b border-border-theme p-6 shadow-2xl md:hidden z-[1000] flex flex-col gap-6"
-            >
-              {/* Header / Brand label inside mobile menu */}
-              <div className="flex justify-between items-center border-b border-border-theme pb-3">
-                <span className="text-[9px] font-mono text-text-muted tracking-[0.25em] uppercase">
-                  SANCTUARY MENU
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              </div>
-
-              {/* Navigation links */}
-              <div className="flex flex-col gap-3">
-                {navLinks.filter(l => l.id !== "cart").map((link, idx) => {
-                  const isActive = pathname === link.href;
-                  const Icon = link.icon;
-                  return (
-                    <motion.div
-                      key={link.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                    >
-                      <Link
-                        href={link.href}
-                        onClick={() => setIsOpen(false)}
-                        className={`flex items-center justify-between py-3 px-4 rounded-xl border transition-all ${isActive
-                            ? "bg-accent/10 border-primary/20 text-primary font-semibold"
-                            : "bg-transparent border-transparent text-text-page/80 hover:text-primary hover:bg-bg-card-alt"
-                          }`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <Icon className="w-4 h-4 text-primary/60" />
-                          <span className="text-xs font-mono tracking-widest uppercase">{link.name}</span>
-                        </div>
-                        {link.id === "wishlist" && link.badge && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)] animate-pulse" />
-                        )}
-                        {link.id === "cart" && link.count !== undefined && link.count > 0 && (
-                          <span className="px-2 py-0.5 text-[9px] font-mono leading-none bg-primary text-bg-page rounded-full font-bold shadow-[0_0_6px_rgba(222,219,200,0.4)]">
-                            {link.count}
-                          </span>
-                        )}
-                      </Link>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {/* Bottom brand footer inside mobile menu */}
-              <div className="border-t border-border-theme pt-4 text-center">
-                <p className="text-[8px] text-text-dim font-mono tracking-widest uppercase">
-                  GHUBOR © 2026. FOR THE MODERN GIBBOR.
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
-
-      {/* Sliding Search Bar */}
-      <AnimatePresence>
-        {showSearch && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="w-full bg-bg-nav border-b border-border-theme px-6 py-4 md:px-12 flex items-center justify-between z-[998] relative"
-          >
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (searchQuery.trim()) {
-                  router.push(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
-                  setShowSearch(false);
-                }
-              }}
-              className="w-full max-w-3xl mx-auto flex items-center gap-3 relative"
-            >
-              <Search className="w-5 h-5 text-primary/75 absolute left-4 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="SEARCH SANCTUARY DROP ARTIFACTS..."
-                className="w-full bg-bg-page/40 border border-border-theme rounded-full py-2.5 pl-12 pr-10 text-xs font-mono text-text-page outline-none focus:border-primary/50 transition-colors uppercase tracking-[0.2em] placeholder:text-text-muted/60"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setShowSearch(false);
-                  setSearchQuery("");
-                }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary cursor-pointer bg-transparent border-none outline-none"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </form>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <form onSubmit={submitSearch} className="mx-auto mt-[12vh] max-w-3xl px-6">
+          <label htmlFor="site-search" className="mb-4 block text-[11px] uppercase tracking-[0.3em] text-primary">
+            Search
+          </label>
+          <div className="flex items-center gap-4 border-b border-black pb-3">
+            <Search {...ICON} className="shrink-0 text-black/50" />
+            <input
+              ref={searchInputRef}
+              id="site-search"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search the drop"
+              className="w-full bg-transparent font-serif italic text-3xl md:text-5xl font-light text-black outline-none placeholder:text-black/25"
+            />
+          </div>
+        </form>
+      </div>
     </>
   );
 }
-
