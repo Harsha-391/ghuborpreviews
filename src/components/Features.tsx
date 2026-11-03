@@ -46,11 +46,11 @@ export default function Features() {
         </h2>
       </div>
 
-      {/* Flat 4-column grid; the 1px gap over a tinted background draws the hairlines. */}
-      <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-px border border-border-theme bg-border-theme md:grid-cols-2 lg:grid-cols-4">
+      {/* Flat 4-column grid; each cell draws its right/bottom hairline, the grid draws top/left. */}
+      <div className="mx-auto grid max-w-[1600px] grid-cols-1 border-l border-t border-border-theme md:grid-cols-2 lg:grid-cols-4">
 
         {/* Card 1 - Video Card */}
-        <Reveal fadeOnly className="h-full">
+        <Reveal fadeOnly className="h-full border-b border-r border-border-theme">
           <div className="relative flex min-h-[440px] h-full flex-col justify-end overflow-hidden bg-black p-6 text-white md:p-8">
             <PillarVideo
               src={PILLAR_VIDEO}
@@ -72,7 +72,7 @@ export default function Features() {
         </Reveal>
 
         {/* Card 2 - Struggle */}
-        <Reveal fadeOnly delay={60} className="h-full">
+        <Reveal fadeOnly delay={60} className="h-full border-b border-r border-border-theme">
           <div className={card}>
             <div>
               {/* Icon Header */}
@@ -124,7 +124,7 @@ export default function Features() {
         </Reveal>
 
         {/* Card 3 - Faith */}
-        <Reveal fadeOnly delay={120} className="h-full">
+        <Reveal fadeOnly delay={120} className="h-full border-b border-r border-border-theme">
           <div className={card}>
             <div>
               {/* Icon Header */}
@@ -176,7 +176,7 @@ export default function Features() {
         </Reveal>
 
         {/* Card 4 - Transcendence */}
-        <Reveal fadeOnly delay={180} className="h-full">
+        <Reveal fadeOnly delay={180} className="h-full border-b border-r border-border-theme">
           <div className={card}>
             <div>
               {/* Icon Header */}

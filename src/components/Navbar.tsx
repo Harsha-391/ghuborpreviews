@@ -107,7 +107,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
   const accountHref = user ? "/profile" : "/login";
   const accountLabel = user ? "Account" : "Sign in";
 
-  const iconBtn = `relative inline-flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full ring-1 ring-inset transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${
+  const iconBtn = `relative h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full ring-1 ring-inset transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${
     solid
       ? "bg-black/[0.04] ring-black/[0.08] hover:bg-black/[0.08]"
       : "bg-white/10 ring-white/[0.18] hover:bg-white/20"
@@ -154,7 +154,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
-              className={`${iconBtn} md:hidden`}
+              className={`${iconBtn} inline-flex md:hidden`}
             >
               {menuOpen ? <X {...ICON} /> : <Menu {...ICON} />}
             </button>
@@ -187,8 +187,8 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
           </Link>
 
           {/* Right: hanging icon cluster, sitting a few px below the link baseline. */}
-          <div className="flex translate-y-1 items-center justify-end gap-1.5 md:gap-2">
-            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className={iconBtn}>
+          <div className="flex items-center justify-end gap-1.5 md:translate-y-1 md:gap-2">
+            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className={`${iconBtn} inline-flex`}>
               <Search {...ICON} />
             </button>
             <Link href={accountHref} aria-label={accountLabel} className={`${iconBtn} hidden md:inline-flex`}>
@@ -207,7 +207,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
             <Link
               href="/cart"
               aria-label={`Cart, ${counts.cart} ${counts.cart === 1 ? "item" : "items"}`}
-              className={`${iconBtn} !w-auto gap-1.5 px-3 md:px-3.5`}
+              className={`${iconBtn} inline-flex !w-auto gap-1.5 px-3 md:px-3.5`}
             >
               <ShoppingBag {...ICON} />
               <span className="min-w-[1ch] text-[11px] leading-none tabular-nums">{counts.cart}</span>
