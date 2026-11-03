@@ -1,17 +1,24 @@
-"use client";
-
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
-import Image from "next/image";
 import { Check, ArrowRight } from "lucide-react";
-import WordsPullUpMultiStyle from "./WordsPullUpMultiStyle";
-import { useImageConfig } from "./ImageConfigContext";
+import CmsImage from "./CmsImage";
+import PillarVideo from "./PillarVideo";
+import Reveal from "./Reveal";
+import { DEFAULT_IMAGE_CONFIGS } from "./ImageConfigContext";
+
+// Brand pillars. Copy is locked (see docs/redesign/PRD.md §4): restyle only.
+const PILLAR_VIDEO =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4";
+
+const card = "flex min-h-[440px] flex-col justify-between bg-white p-6 md:p-8 h-full";
+const iconBox = "relative h-12 w-12 overflow-hidden border border-border-theme bg-white";
+const title = "mb-6 font-serif text-2xl font-light tracking-wide";
+const item = "flex gap-3 items-start";
+const check = "w-4 h-4 text-primary shrink-0 mt-0.5";
+const itemText = "text-xs text-text-muted font-light leading-relaxed";
+const link =
+  "group/link mt-6 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-primary hover:underline underline-offset-8";
+const linkArrow = "w-3.5 h-3.5 rotate-[-45deg] transition-transform duration-200 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5";
 
 export default function Features() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(containerRef, { once: true, margin: "-100px" });
-  const { getImageUrl } = useImageConfig();
-
   const headerSegments = [
     {
       text: "Wearable scripture forged for silent battles. ",
@@ -19,299 +26,208 @@ export default function Features() {
     },
     {
       text: "Dark. Sacred. Spare. Speaks in fragments.",
-      className: "text-gray-500 font-light italic font-serif",
+      className: "text-text-dim font-light italic font-serif",
     },
   ];
 
-  // Variants for staggered entrance animation of the cards
-  const containerVariants = {
-    hidden: {},
-    visible: {
-      transition: {
-        staggerChildren: 0.15,
-      },
-    },
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.8,
-        ease: [0.22, 1, 0.36, 1] as const,
-      },
-    },
-  };
-
   return (
-    <section
-      id="features"
-      className="min-h-screen bg-bg-page relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden select-none flex flex-col justify-center"
-    >
-      {/* Subtle background noise overlay */}
-      <div className="bg-noise absolute inset-0 opacity-[0.12] pointer-events-none z-0" />
-      
-      {/* Left flank — organic crimson splash */}
-      <div
-        className="absolute top-[20%] -left-24 w-[440px] h-[520px] opacity-[0.07] pointer-events-none z-0"
-        style={{ background: "#C0392B", borderRadius: "64% 36% 52% 48% / 45% 56% 44% 55%", filter: "blur(100px)" }}
-      />
-      {/* Right flank — deep oxblood */}
-      <div
-        className="absolute bottom-[15%] -right-24 w-[400px] h-[480px] opacity-[0.06] pointer-events-none z-0"
-        style={{ background: "#5C0606", borderRadius: "42% 58% 67% 33% / 55% 42% 58% 45%", filter: "blur(110px)" }}
-      />
-      {/* Center — warm parchment ambient breath */}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[320px] opacity-[0.04] pointer-events-none z-0"
-        style={{ background: "#D4C5A9", borderRadius: "55% 45% 38% 62% / 50% 60% 40% 50%", filter: "blur(130px)" }}
-      />
-      {/* Small top-right accent drop */}
-      <div
-        className="absolute top-[8%] right-[12%] w-[200px] h-[180px] opacity-[0.08] pointer-events-none z-0"
-        style={{ background: "#C0392B", borderRadius: "73% 27% 46% 54% / 54% 47% 53% 46%", filter: "blur(70px)" }}
-      />
-
+    <section id="features" className="bg-white px-4 py-24 sm:px-6 md:py-32 lg:px-10 border-t border-border-theme">
       {/* Header Container */}
-      <div className="text-center mb-16 relative z-10 max-w-4xl mx-auto">
-        <span className="text-[10px] sm:text-xs text-primary/60 tracking-[0.3em] uppercase block mb-4">
+      <div className="mx-auto mb-16 max-w-4xl text-center">
+        <span className="mb-5 block text-[11px] uppercase tracking-[0.3em] text-primary">
           THE SIGNATURE PILLARS
         </span>
-        <WordsPullUpMultiStyle
-          segments={headerSegments}
-          className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-normal leading-relaxed"
-        />
+        <h2 className="text-2xl leading-snug sm:text-3xl md:text-4xl">
+          {headerSegments.map((seg) => (
+            <span key={seg.text} className={seg.className}>
+              {seg.text}
+            </span>
+          ))}
+        </h2>
       </div>
 
-      {/* 4-column card grid */}
-      <motion.div
-        ref={containerRef}
-        variants={containerVariants}
-        initial="hidden"
-        animate={isInView ? "visible" : "hidden"}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-4 max-w-7xl mx-auto relative z-10 w-full"
-      >
-        
-        {/* Card 1 - Video Card */}
-        <motion.div
-          variants={cardVariants}
-          className="relative h-[480px] rounded-2xl overflow-hidden border border-border-theme shadow-2xl flex flex-col justify-end p-6 group"
-        >
-          {/* Background Video */}
-          <div className="absolute inset-0 z-0">
-            <video
-              src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover filter brightness-75 contrast-125"
-            />
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-bg-page via-bg-page/20 to-transparent" />
-            <div className="noise-overlay absolute inset-0 opacity-[0.3] mix-blend-overlay pointer-events-none" />
-          </div>
+      {/* Flat 4-column grid; the 1px gap over a tinted background draws the hairlines. */}
+      <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-px border border-border-theme bg-border-theme md:grid-cols-2 lg:grid-cols-4">
 
-          {/* Card Content */}
-          <div className="relative z-10">
-            <span className="text-[10px] font-mono text-primary/60 tracking-widest block mb-2 uppercase">
-              Artifact Showcase
-            </span>
-            <h3 className="font-blackletter text-2xl sm:text-3xl text-text-page font-light leading-none">
-              Sacred silhouettes.
-            </h3>
+        {/* Card 1 - Video Card */}
+        <Reveal fadeOnly className="h-full">
+          <div className="relative flex min-h-[440px] h-full flex-col justify-end overflow-hidden bg-black p-6 text-white md:p-8">
+            <PillarVideo
+              src={PILLAR_VIDEO}
+              poster={DEFAULT_IMAGE_CONFIGS.scripture.lightUrl}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+            {/* Card Content */}
+            <div className="relative">
+              <span className="text-[10px] text-white/70 tracking-[0.25em] block mb-2 uppercase">
+                Artifact Showcase
+              </span>
+              <h3 className="font-serif italic text-3xl font-light leading-none">
+                Sacred silhouettes.
+              </h3>
+            </div>
           </div>
-        </motion.div>
+        </Reveal>
 
         {/* Card 2 - Struggle */}
-        <motion.div
-          variants={cardVariants}
-          className="bg-bg-card-alt rounded-2xl border border-border-theme shadow-2xl p-6 flex flex-col justify-between h-[480px] group transition-all duration-300 hover:border-primary/20"
-        >
-          <div>
-            {/* Icon Header */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded overflow-hidden bg-bg-page border border-border-theme flex items-center justify-center p-1">
-                <Image
-                  src={getImageUrl("struggle")}
-                  alt="Struggle Icon"
-                  fill
-                  sizes="56px"
-                  className="object-cover rounded filter contrast-125"
-                />
+        <Reveal fadeOnly delay={60} className="h-full">
+          <div className={card}>
+            <div>
+              {/* Icon Header */}
+              <div className="flex items-center justify-between mb-10">
+                <div className={iconBox}>
+                  <CmsImage slot="struggle" fallback={DEFAULT_IMAGE_CONFIGS.struggle.lightUrl} alt="Struggle Icon" sizes="48px" className="object-cover" />
+                </div>
+                <span className="text-xs text-text-dim tracking-wider">
+                  01
+                </span>
               </div>
-              <span className="text-xs font-mono text-text-muted tracking-wider">
-                01
-              </span>
+
+              {/* Title */}
+              <h3 className={title}>
+                01. Armored Build
+              </h3>
+
+              {/* Checklist */}
+              <ul className="space-y-4">
+                <li className={item}>
+                  <Check className={check} strokeWidth={1.5} />
+                  <span className={itemText}>
+                    Engineered with 480GSM ultra-heavyweight cotton canvas and combed loopback weave.
+                  </span>
+                </li>
+                <li className={item}>
+                  <Check className={check} strokeWidth={1.5} />
+                  <span className={itemText}>
+                    Structured contours and dropped shoulders that drape to act as a physical shield.
+                  </span>
+                </li>
+                <li className={item}>
+                  <Check className={check} strokeWidth={1.5} />
+                  <span className={itemText}>
+                    Distressed raw edge hems symbolizing lifetime resilience and the weight of struggle.
+                  </span>
+                </li>
+              </ul>
             </div>
 
-            {/* Title */}
-            <h3 className="text-xl sm:text-2xl font-light text-text-page font-serif tracking-wide mb-6">
-              01. Armored Build
-            </h3>
-
-            {/* Checklist */}
-            <ul className="space-y-4">
-              <li className="flex gap-3 items-start">
-                <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span className="text-xs text-text-muted font-light leading-tight">
-                  Engineered with 480GSM ultra-heavyweight cotton canvas and combed loopback weave.
-                </span>
-              </li>
-              <li className="flex gap-3 items-start">
-                <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span className="text-xs text-text-muted font-light leading-tight">
-                  Structured contours and dropped shoulders that drape to act as a physical shield.
-                </span>
-              </li>
-              <li className="flex gap-3 items-start">
-                <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span className="text-xs text-text-muted font-light leading-tight">
-                  Distressed raw edge hems symbolizing lifetime resilience and the weight of struggle.
-                </span>
-              </li>
-            </ul>
+            {/* Learn More Link */}
+            <div>
+              <a href="#about" className={link}>
+                <span>DESCEND FURTHER</span>
+                <ArrowRight className={linkArrow} strokeWidth={1.5} />
+              </a>
+            </div>
           </div>
-
-          {/* Learn More Link */}
-          <div>
-            <a
-              href="#about"
-              className="inline-flex items-center gap-2 text-xs font-light text-primary/80 group-hover:text-primary transition-colors tracking-widest uppercase mt-4"
-            >
-              <span>DESCEND FURTHER</span>
-              <ArrowRight className="w-3.5 h-3.5 rotate-[-45deg] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </a>
-          </div>
-        </motion.div>
+        </Reveal>
 
         {/* Card 3 - Faith */}
-        <motion.div
-          variants={cardVariants}
-          className="bg-bg-card-alt rounded-2xl border border-border-theme shadow-2xl p-6 flex flex-col justify-between h-[480px] group transition-all duration-300 hover:border-primary/20"
-        >
-          <div>
-            {/* Icon Header */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded overflow-hidden bg-bg-page border border-border-theme flex items-center justify-center p-1">
-                <Image
-                  src={getImageUrl("faith")}
-                  alt="Faith Icon"
-                  fill
-                  sizes="56px"
-                  className="object-cover rounded filter contrast-125"
-                />
+        <Reveal fadeOnly delay={120} className="h-full">
+          <div className={card}>
+            <div>
+              {/* Icon Header */}
+              <div className="flex items-center justify-between mb-10">
+                <div className={iconBox}>
+                  <CmsImage slot="faith" fallback={DEFAULT_IMAGE_CONFIGS.faith.lightUrl} alt="Faith Icon" sizes="48px" className="object-cover" />
+                </div>
+                <span className="text-xs text-text-dim tracking-wider">
+                  02
+                </span>
               </div>
-              <span className="text-xs font-mono text-text-muted tracking-wider">
-                02
-              </span>
+
+              {/* Title */}
+              <h3 className={title}>
+                02. Hidden Inscriptions
+              </h3>
+
+              {/* Checklist */}
+              <ul className="space-y-4">
+                <li className={item}>
+                  <Check className={check} strokeWidth={1.5} />
+                  <span className={itemText}>
+                    Private scripture fragments printed on the interior lining of collars and hoods.
+                  </span>
+                </li>
+                <li className={item}>
+                  <Check className={check} strokeWidth={1.5} />
+                  <span className={itemText}>
+                    High-density oxblood and matte black gothic calligraphy chest embroidery.
+                  </span>
+                </li>
+                <li className={item}>
+                  <Check className={check} strokeWidth={1.5} />
+                  <span className={itemText}>
+                    A personal dialogue between the garment and your skin, representing silent faith.
+                  </span>
+                </li>
+              </ul>
             </div>
 
-            {/* Title */}
-            <h3 className="text-xl sm:text-2xl font-light text-text-page font-serif tracking-wide mb-6">
-              02. Hidden Inscriptions
-            </h3>
-
-            {/* Checklist */}
-            <ul className="space-y-4">
-              <li className="flex gap-3 items-start">
-                <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span className="text-xs text-text-muted font-light leading-tight">
-                  Private scripture fragments printed on the interior lining of collars and hoods.
-                </span>
-              </li>
-              <li className="flex gap-3 items-start">
-                <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span className="text-xs text-text-muted font-light leading-tight">
-                  High-density oxblood and matte black gothic calligraphy chest embroidery.
-                </span>
-              </li>
-              <li className="flex gap-3 items-start">
-                <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span className="text-xs text-text-muted font-light leading-tight">
-                  A personal dialogue between the garment and your skin, representing silent faith.
-                </span>
-              </li>
-            </ul>
+            {/* Learn More Link */}
+            <div>
+              <a href="#about" className={link}>
+                <span>READ SCRIPTA</span>
+                <ArrowRight className={linkArrow} strokeWidth={1.5} />
+              </a>
+            </div>
           </div>
-
-          {/* Learn More Link */}
-          <div>
-            <a
-              href="#about"
-              className="inline-flex items-center gap-2 text-xs font-light text-primary/80 group-hover:text-primary transition-colors tracking-widest uppercase mt-4"
-            >
-              <span>READ SCRIPTA</span>
-              <ArrowRight className="w-3.5 h-3.5 rotate-[-45deg] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </a>
-          </div>
-        </motion.div>
+        </Reveal>
 
         {/* Card 4 - Transcendence */}
-        <motion.div
-          variants={cardVariants}
-          className="bg-bg-card-alt rounded-2xl border border-border-theme shadow-2xl p-6 flex flex-col justify-between h-[480px] group transition-all duration-300 hover:border-primary/20"
-        >
-          <div>
-            {/* Icon Header */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded overflow-hidden bg-bg-page border border-border-theme flex items-center justify-center p-1">
-                <Image
-                  src={getImageUrl("transcendence")}
-                  alt="Transcendence Icon"
-                  fill
-                  sizes="56px"
-                  className="object-cover rounded filter contrast-125"
-                />
+        <Reveal fadeOnly delay={180} className="h-full">
+          <div className={card}>
+            <div>
+              {/* Icon Header */}
+              <div className="flex items-center justify-between mb-10">
+                <div className={iconBox}>
+                  <CmsImage slot="transcendence" fallback={DEFAULT_IMAGE_CONFIGS.transcendence.lightUrl} alt="Transcendence Icon" sizes="48px" className="object-cover" />
+                </div>
+                <span className="text-xs text-text-dim tracking-wider">
+                  03
+                </span>
               </div>
-              <span className="text-xs font-mono text-text-muted tracking-wider">
-                03
-              </span>
+
+              {/* Title */}
+              <h3 className={title}>
+                03. Archival Relics
+              </h3>
+
+              {/* Checklist */}
+              <ul className="space-y-4">
+                <li className={item}>
+                  <Check className={check} strokeWidth={1.5} />
+                  <span className={itemText}>
+                    Limited production runs of exactly 64 hand-numbered replicas per silhouette.
+                  </span>
+                </li>
+                <li className={item}>
+                  <Check className={check} strokeWidth={1.5} />
+                  <span className={itemText}>
+                    Custom hand-numbered leather patches and woven interior tracking codes.
+                  </span>
+                </li>
+                <li className={item}>
+                  <Check className={check} strokeWidth={1.5} />
+                  <span className={itemText}>
+                    Each garment stands as a certified relic of struggle, faith, and transcendence.
+                  </span>
+                </li>
+              </ul>
             </div>
 
-            {/* Title */}
-            <h3 className="text-xl sm:text-2xl font-light text-text-page font-serif tracking-wide mb-6">
-              03. Archival Relics
-            </h3>
-
-            {/* Checklist */}
-            <ul className="space-y-4">
-              <li className="flex gap-3 items-start">
-                <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span className="text-xs text-text-muted font-light leading-tight">
-                  Limited production runs of exactly 64 hand-numbered replicas per silhouette.
-                </span>
-              </li>
-              <li className="flex gap-3 items-start">
-                <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span className="text-xs text-text-muted font-light leading-tight">
-                  Custom hand-numbered leather patches and woven interior tracking codes.
-                </span>
-              </li>
-              <li className="flex gap-3 items-start">
-                <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span className="text-xs text-text-muted font-light leading-tight">
-                  Each garment stands as a certified relic of struggle, faith, and transcendence.
-                </span>
-              </li>
-            </ul>
+            {/* Learn More Link */}
+            <div>
+              <a href="#about" className={link}>
+                <span>ENTER THE RITUAL</span>
+                <ArrowRight className={linkArrow} strokeWidth={1.5} />
+              </a>
+            </div>
           </div>
+        </Reveal>
 
-          {/* Learn More Link */}
-          <div>
-            <a
-              href="#about"
-              className="inline-flex items-center gap-2 text-xs font-light text-primary/80 group-hover:text-primary transition-colors tracking-widest uppercase mt-4"
-            >
-              <span>ENTER THE RITUAL</span>
-              <ArrowRight className="w-3.5 h-3.5 rotate-[-45deg] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </a>
-          </div>
-        </motion.div>
-
-      </motion.div>
+      </div>
     </section>
   );
 }

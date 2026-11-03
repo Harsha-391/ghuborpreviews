@@ -107,6 +107,9 @@ body {
   opacity: 0;
   transform: translate3d(0, 12px, 0);
 }
+.reveal.reveal-fade[data-armed="true"] {
+  transform: none;
+}
 .reveal[data-armed="true"][data-shown="true"] {
   opacity: 1;
   transform: none;

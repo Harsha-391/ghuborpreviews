@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
-import { useImageConfig } from "./ImageConfigContext";
 
 interface Review {
   quote: string;
@@ -15,7 +13,6 @@ interface Review {
 export default function Reviews() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleCards, setVisibleCards] = useState(3);
-  const { getImageUrl } = useImageConfig();
 
   const reviews: Review[] = [
     {
@@ -83,58 +80,35 @@ export default function Reviews() {
   };
 
   return (
-    <section id="reviews" className="bg-bg-page py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden select-none border-t border-border-theme">
-      {/* Background Noise and Subtle Red Glow */}
-      <div className="bg-noise absolute inset-0 opacity-[0.08] pointer-events-none z-0" />
-      {/* Top-right ink corner — crimson */}
-      <div
-        className="absolute -top-24 -right-24 w-[380px] h-[340px] opacity-[0.08] pointer-events-none z-0"
-        style={{ background: "#C0392B", borderRadius: "20% 80% 40% 60% / 30% 70% 50% 50%", filter: "blur(90px)" }}
-      />
-      {/* Bottom-left warm parchment bleed */}
-      <div
-        className="absolute -bottom-24 -left-24 w-[420px] h-[300px] opacity-[0.05] pointer-events-none z-0"
-        style={{ background: "#D4C5A9", borderRadius: "60% 40% 20% 80% / 50% 30% 70% 50%", filter: "blur(100px)" }}
-      />
-      {/* Mid scatter — deep oxblood drop */}
-      <div
-        className="absolute top-[45%] left-[28%] w-[220px] h-[200px] opacity-[0.05] pointer-events-none z-0"
-        style={{ background: "#5C0606", borderRadius: "64% 36% 52% 48% / 45% 56% 44% 55%", filter: "blur(75px)" }}
-      />
-      {/* Small bottom-right drop */}
-      <div
-        className="absolute bottom-[10%] right-[15%] w-[160px] h-[160px] opacity-[0.07] pointer-events-none z-0"
-        style={{ background: "#C0392B", borderRadius: "55% 45% 70% 30% / 45% 55% 45% 55%", filter: "blur(55px)" }}
-      />
+    <section id="reviews" className="bg-white px-4 py-24 sm:px-6 md:py-32 lg:px-10 select-none">
+      <div className="mx-auto max-w-[1600px]">
 
-      <div className="max-w-7xl mx-auto relative z-10">
-        
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div className="mb-14 flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="text-left">
-            <span className="text-primary text-[10px] sm:text-xs font-light tracking-[0.3em] uppercase block mb-3">
+            <span className="mb-4 block text-[11px] uppercase tracking-[0.3em] text-primary">
               TESTAMENTS
             </span>
-            <h2 className="font-serif italic text-3xl sm:text-4xl md:text-5xl text-text-page font-light tracking-wide leading-none">
+            <h2 className="font-serif text-4xl font-light italic leading-none tracking-wide md:text-5xl">
               Witnessed in struggle.
             </h2>
           </div>
 
           {/* Navigation buttons */}
-          <div className="flex gap-4">
+          <div className="flex gap-2">
             <button
               onClick={prevSlide}
               aria-label="Previous testimonials"
-              className="w-10 h-10 rounded-full border border-white/10 bg-black flex items-center justify-center text-primary/75 hover:text-white hover:border-primary/40 hover:bg-[#100505]/40 transition-all duration-300 cursor-pointer"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-inset ring-black/15 transition-colors duration-200 hover:bg-black hover:text-white cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft size={18} strokeWidth={1.5} />
             </button>
             <button
               onClick={nextSlide}
               aria-label="Next testimonials"
-              className="w-10 h-10 rounded-full border border-white/10 bg-black flex items-center justify-center text-primary/75 hover:text-white hover:border-primary/40 hover:bg-[#100505]/40 transition-all duration-300 cursor-pointer"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-inset ring-black/15 transition-colors duration-200 hover:bg-black hover:text-white cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight size={18} strokeWidth={1.5} />
             </button>
           </div>
         </div>
@@ -156,40 +130,30 @@ export default function Reviews() {
                   key={index}
                   className={`${cardWidth} shrink-0 px-3`}
                 >
-                  <div className="bg-bg-card border border-border-theme rounded-2xl p-6 sm:p-8 flex flex-col justify-between min-h-[280px] group transition-all duration-500 hover:border-primary/20 hover:bg-bg-card-alt hover:shadow-[0_10px_30px_rgba(92,6,6,0.05)] relative overflow-hidden h-full">
-                    {/* Oxblood accent spot on hover */}
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-red-950/0 group-hover:bg-red-950/5 rounded-full blur-2xl transition-all duration-500 pointer-events-none" />
-                    
+                  <figure className="flex h-full min-h-[280px] flex-col justify-between border border-border-theme p-6 sm:p-8">
                     {/* Quote Icon */}
-                    <div className="mb-6 flex justify-between items-start">
-                      <Quote className="w-8 h-8 text-[#5C0606] opacity-40 group-hover:opacity-85 transition-opacity duration-500" />
-                      <span className="text-[8px] font-mono text-text-muted uppercase tracking-widest bg-bg-page/50 px-2 py-0.5 rounded border border-border-theme">
+                    <div className="mb-6 flex items-start justify-between">
+                      <Quote size={28} strokeWidth={1.5} className="text-primary/50" />
+                      <span className="text-[9px] uppercase tracking-widest text-text-dim">
                         {review.tag}
                       </span>
                     </div>
 
                     {/* Quote Text */}
-                    <p className="text-text-muted group-hover:text-text-page text-xs sm:text-sm font-light leading-relaxed mb-8 transition-colors duration-500 flex-grow">
+                    <blockquote className="mb-8 flex-grow text-sm font-light leading-relaxed text-text-page/80">
                       &ldquo;{review.quote}&rdquo;
-                    </p>
+                    </blockquote>
 
                     {/* User Profile */}
-                    <div className="border-t border-border-theme pt-4 flex justify-between items-end mt-auto">
-                      <div>
-                        <h4 className="text-xs sm:text-sm font-medium text-primary tracking-wide">
-                          {review.author}
-                        </h4>
-                        <p className="text-[10px] text-text-dim uppercase font-light tracking-widest mt-0.5">
-                          {review.location}
-                        </p>
-                      </div>
-                      
-                      {/* Active glyph */}
-                      <div className="relative w-6 h-6 opacity-20 group-hover:opacity-75 transition-opacity duration-500 filter invert brightness-125">
-                        <Image src={getImageUrl("glyph")} alt="" fill sizes="24px" className="object-contain" />
-                      </div>
-                    </div>
-                  </div>
+                    <figcaption className="mt-auto border-t border-border-theme pt-4">
+                      <p className="text-sm font-bold tracking-wide text-primary">
+                        {review.author}
+                      </p>
+                      <p className="mt-0.5 text-[10px] font-light uppercase tracking-widest text-text-dim">
+                        {review.location}
+                      </p>
+                    </figcaption>
+                  </figure>
                 </div>
               );
             })}
@@ -203,8 +167,9 @@ export default function Reviews() {
               key={idx}
               onClick={() => setCurrentIndex(idx)}
               aria-label={`Go to slide ${idx + 1}`}
-              className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                currentIndex === idx ? "bg-primary w-6" : "bg-white/10 hover:bg-white/30"
+              aria-current={currentIndex === idx}
+              className={`h-1.5 rounded-full transition-colors duration-200 cursor-pointer ${
+                currentIndex === idx ? "w-6 bg-primary" : "w-1.5 bg-black/15 hover:bg-black/30"
               }`}
             />
           ))}
