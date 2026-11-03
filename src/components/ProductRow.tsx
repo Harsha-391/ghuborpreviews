@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import CmsImage from "./CmsImage";
 import { useDragScroll } from "./useDragScroll";
 import { Product } from "../data/products";
@@ -12,13 +12,16 @@ const COPIES = 3; // loop seamlessly in both directions by staying inside the mi
 const MIN_PER_COPY = 8; // a copy must be wider than any viewport
 const SPEED = 36; // px per second
 const CARD = "w-[42vw] shrink-0 mr-2 sm:w-[30vw] md:mr-3 md:w-[22vw] lg:w-[16vw]";
-const CARD_SIZES = "(min-width: 1024px) 16vw, (min-width: 768px) 22vw, (min-width: 640px) 30vw, 42vw";
+const CARD_SIZES = "(min-width: 1024px) 18vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 46vw";
 
 /**
  * Netflix-style row. A native horizontal scroller that glides on its own, so
  * swiping, trackpads and keyboard scrolling all work as normal. Hovering,
  * touching, focusing or dragging pauses it; it carries on from wherever it was
  * left. Vertical wheel and swipe gestures always go to the page.
+ *
+ * One card is "popped" (scaled up, name and price revealed): the leftmost card
+ * while the row glides, or whichever card the mouse, finger or keyboard is on.
  */
 export default function ProductRow() {
   const products = useStorefrontProducts();
@@ -36,6 +39,7 @@ export default function ProductRow() {
     onDragEnd: () => engine.current?.resume(1500),
   });
 
+  // Auto-glide.
   useEffect(() => {
     const el = railRef.current;
     if (!el || unit.length === 0) return;
@@ -129,6 +133,131 @@ export default function ProductRow() {
     };
   }, [unit]);
 
+  // The pop. The active card is toggled with a data attribute (no React
+  // re-render); CSS does the scale and reveal.
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail || unit.length === 0) return;
+
+    let leftmost: HTMLElement | null = null; // card on the probe line near the left edge
+    let pointed: HTMLElement | null = null; // card under the mouse / finger / focus
+    let active: HTMLElement | null = null;
+    let touchTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const apply = () => {
+      const next = pointed ?? leftmost;
+      if (next === active) return;
+      active?.removeAttribute("data-active");
+      next?.setAttribute("data-active", "true");
+      active = next;
+    };
+
+    // A probe strip covering the right end of the first card slot plus the gap
+    // after it, so some card always touches it. Of the cards touching it, the
+    // one furthest left that is still on screen is the "leftmost"; when it
+    // slides off, the next card takes over.
+    let probe: IntersectionObserver | null = null;
+    const touching = new Set<HTMLElement>();
+    const pickLeftmost = () => {
+      const left = rail.getBoundingClientRect().left;
+      let best: HTMLElement | null = null;
+      let bestX = Infinity;
+      for (const card of Array.from(touching)) {
+        const x = card.getBoundingClientRect().left - left;
+        if (x >= -3 && x < bestX) {
+          best = card;
+          bestX = x;
+        }
+      }
+      if (best) leftmost = best;
+    };
+    const buildProbe = () => {
+      probe?.disconnect();
+      touching.clear();
+      const first = rail.querySelector<HTMLElement>("[data-card]");
+      if (!first) return;
+      const cardW = first.offsetWidth;
+      const stride = cardW + parseFloat(getComputedStyle(first).marginRight || "0");
+      const width = rail.clientWidth;
+      const from = Math.max(2, Math.min(cardW, width) - 3);
+      const to = Math.max(from + 2, Math.min(stride, width) - 1);
+      probe = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const card = entry.target as HTMLElement;
+            if (entry.isIntersecting) touching.add(card);
+            else touching.delete(card);
+          }
+          pickLeftmost();
+          apply();
+        },
+        { root: rail, rootMargin: `0px ${-(width - to)}px 0px ${-from}px` }
+      );
+      rail.querySelectorAll<HTMLElement>("[data-card]").forEach((card) => probe!.observe(card));
+    };
+    buildProbe();
+    const resize = new ResizeObserver(buildProbe);
+    resize.observe(rail);
+
+    const cardFrom = (target: EventTarget | null) =>
+      target instanceof Element ? target.closest<HTMLElement>("[data-card]") : null;
+
+    const onPointerOver = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      const card = cardFrom(e.target);
+      if (card) {
+        pointed = card;
+        apply();
+      }
+    };
+    const onMouseLeave = () => {
+      pointed = null;
+      apply();
+    };
+    const onTouchStart = (e: TouchEvent) => {
+      clearTimeout(touchTimer);
+      const card = cardFrom(e.target);
+      if (card) {
+        pointed = card;
+        apply();
+      }
+    };
+    const onTouchEnd = () => {
+      clearTimeout(touchTimer);
+      touchTimer = setTimeout(() => {
+        pointed = null;
+        apply();
+      }, 2500);
+    };
+    const onFocusIn = (e: FocusEvent) => {
+      const card = cardFrom(e.target);
+      if (card) {
+        pointed = card;
+        apply();
+      }
+    };
+
+    rail.addEventListener("pointerover", onPointerOver);
+    rail.addEventListener("mouseleave", onMouseLeave);
+    rail.addEventListener("touchstart", onTouchStart, { passive: true });
+    rail.addEventListener("touchend", onTouchEnd, { passive: true });
+    rail.addEventListener("focusin", onFocusIn);
+    rail.addEventListener("focusout", onMouseLeave);
+
+    return () => {
+      probe?.disconnect();
+      resize.disconnect();
+      clearTimeout(touchTimer);
+      active?.removeAttribute("data-active");
+      rail.removeEventListener("pointerover", onPointerOver);
+      rail.removeEventListener("mouseleave", onMouseLeave);
+      rail.removeEventListener("touchstart", onTouchStart);
+      rail.removeEventListener("touchend", onTouchEnd);
+      rail.removeEventListener("focusin", onFocusIn);
+      rail.removeEventListener("focusout", onMouseLeave);
+    };
+  }, [unit]);
+
   const nudge = (dir: 1 | -1) => {
     const el = railRef.current;
     if (!el) return;
@@ -140,8 +269,8 @@ export default function ProductRow() {
   if (products !== null && products.length === 0) return null;
 
   return (
-    <section aria-labelledby="archives-heading" className="bg-black pb-20 pt-2 text-white md:pb-28">
-      <div className="mb-5 flex items-end justify-between gap-4 px-3 md:mb-7 md:px-5">
+    <section aria-labelledby="archives-heading" className="bg-black pb-14 pt-2 text-white md:pb-20">
+      <div className="mb-1 flex items-end justify-between gap-4 px-3 md:mb-2 md:px-5">
         <div>
           <span className="mb-2 block text-[11px] uppercase tracking-[0.3em] text-white/50">THE ARCHIVES</span>
           <h2 id="archives-heading" className="font-serif text-2xl font-light italic md:text-4xl">
@@ -157,10 +286,11 @@ export default function ProductRow() {
       </div>
 
       <div className="group/row relative">
+        {/* Vertical padding leaves room for the popped card to grow without being clipped. */}
         <div
           ref={railRef}
           aria-label="Sanctuary Offerings"
-          className="drag-scroll no-scrollbar flex overflow-x-auto overflow-y-hidden overscroll-x-contain"
+          className="drag-scroll no-scrollbar flex overflow-x-auto overflow-y-hidden overscroll-x-contain py-6 md:py-8"
         >
           {products === null
             ? Array.from({ length: 8 }, (_, i) => <RowSkeleton key={i} />)
@@ -177,7 +307,7 @@ export default function ProductRow() {
               type="button"
               onClick={() => nudge(-1)}
               aria-label="Scroll offerings left"
-              className="absolute inset-y-0 left-0 hidden w-14 items-center justify-center bg-gradient-to-r from-black/70 to-transparent opacity-0 transition-opacity duration-200 group-hover/row:opacity-100 focus-visible:opacity-100 cursor-pointer [@media(hover:hover)]:flex"
+              className="absolute inset-y-0 left-0 z-20 hidden w-14 items-center justify-center bg-gradient-to-r from-black/70 to-transparent opacity-0 transition-opacity duration-200 group-hover/row:opacity-100 focus-visible:opacity-100 cursor-pointer [@media(hover:hover)]:flex"
             >
               <ChevronLeft size={28} strokeWidth={1.25} />
             </button>
@@ -185,7 +315,7 @@ export default function ProductRow() {
               type="button"
               onClick={() => nudge(1)}
               aria-label="Scroll offerings right"
-              className="absolute inset-y-0 right-0 hidden w-14 items-center justify-center bg-gradient-to-l from-black/70 to-transparent opacity-0 transition-opacity duration-200 group-hover/row:opacity-100 focus-visible:opacity-100 cursor-pointer [@media(hover:hover)]:flex"
+              className="absolute inset-y-0 right-0 z-20 hidden w-14 items-center justify-center bg-gradient-to-l from-black/70 to-transparent opacity-0 transition-opacity duration-200 group-hover/row:opacity-100 focus-visible:opacity-100 cursor-pointer [@media(hover:hover)]:flex"
             >
               <ChevronRight size={28} strokeWidth={1.25} />
             </button>
@@ -201,20 +331,39 @@ export default function ProductRow() {
 function RowCard({ product, hidden }: { product: Product; hidden: boolean }) {
   const href = `/shop/${product.id}`;
   return (
-    <div className={CARD} aria-hidden={hidden || undefined}>
-      <Link href={href} draggable={false} tabIndex={hidden ? -1 : 0} className="group/item block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-        <div className="relative aspect-[3/4] overflow-hidden rounded-md bg-white/[0.06]">
-          <CmsImage
-            slot={`product-${product.id}`}
-            fallback={product.image || "/logo-white.svg"}
-            alt={hidden ? "" : product.title}
-            sizes={CARD_SIZES}
-            draggable={false}
-            className="object-cover object-center transition-transform duration-500 ease-out group-hover/item:scale-[1.04]"
-          />
+    <div data-card className={`group/card relative ${CARD} data-[active=true]:z-10`} aria-hidden={hidden || undefined}>
+      <Link
+        href={href}
+        draggable={false}
+        tabIndex={hidden ? -1 : 0}
+        aria-label={hidden ? undefined : `${product.title}, ${product.price}`}
+        className="relative block aspect-[3/4] origin-left overflow-hidden rounded-md bg-white/[0.06] transition-transform duration-300 ease-out group-data-[active=true]/card:scale-[1.1] group-data-[active=true]/card:ring-1 group-data-[active=true]/card:ring-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      >
+        <CmsImage
+          slot={`product-${product.id}`}
+          fallback={product.image || "/logo-white.svg"}
+          alt=""
+          sizes={CARD_SIZES}
+          draggable={false}
+          className="object-cover object-center"
+        />
+
+        {/* Revealed on the popped card only. */}
+        <div className="absolute inset-x-0 bottom-0 translate-y-3 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 pb-3 pt-12 opacity-0 transition-[opacity,transform] duration-300 ease-out group-data-[active=true]/card:translate-y-0 group-data-[active=true]/card:opacity-100 md:px-4 md:pb-4">
+          {product.category && (
+            <p className="mb-1 truncate text-[9px] uppercase tracking-[0.25em] text-white/55">{product.category}</p>
+          )}
+          <p className="line-clamp-2 text-[12px] leading-4 text-white md:text-[13px] md:leading-5">{product.title}</p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="truncate text-[12px] leading-5 text-white/75">
+              {product.mrp && <span className="mr-1.5 text-white/40 line-through">{product.mrp}</span>}
+              {product.price}
+            </p>
+            <span aria-hidden className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-black">
+              <ArrowUpRight size={14} strokeWidth={1.5} />
+            </span>
+          </div>
         </div>
-        <p className="mt-2.5 truncate text-[12px] leading-5 text-white/85 md:text-[13px]">{product.title}</p>
-        <p className="text-[12px] leading-5 text-white/50">{product.price}</p>
       </Link>
     </div>
   );
@@ -224,8 +373,6 @@ function RowSkeleton() {
   return (
     <div aria-hidden className={CARD}>
       <div className="aspect-[3/4] rounded-md bg-white/[0.06]" />
-      <div className="my-1 mt-3.5 h-3 w-2/3 rounded-sm bg-white/[0.06]" />
-      <div className="my-1 h-3 w-1/4 rounded-sm bg-white/[0.06]" />
     </div>
   );
 }
