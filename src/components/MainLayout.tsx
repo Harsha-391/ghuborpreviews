@@ -4,8 +4,7 @@ import Navbar from "./Navbar";
 import Hero from "./Hero";
 import About from "./About";
 import Features from "./Features";
-import FeaturedCarouselSection from "./FeaturedCarouselSection";
-import ProductLineup from "./ProductLineup";
+import LatestDrop from "./LatestDrop";
 import Reviews from "./Reviews";
 import Footer from "./Footer";
 
@@ -16,8 +15,7 @@ export default function MainLayout() {
 
       <main>
         <Hero />
-        <FeaturedCarouselSection />
-        <ProductLineup />
+        <LatestDrop />
         <About />
         <Features />
         <Reviews />
