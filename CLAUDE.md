@@ -40,7 +40,8 @@ Clean caches when behavior looks stale: delete `.next/`, `node_modules/.cache/`,
 - No global `transition` rules on element selectors. Add transitions per component.
 - No `filter: blur()` decorative layers, no `feTurbulence` noise overlays.
 - No scroll event listeners for UI state — use `IntersectionObserver`.
-- No JS-driven carousels/marquees, no autoplay sliders, no WebGL for decoration. Horizontal rails use CSS `scroll-snap`.
+- No WebGL for decoration. Horizontal rails and slideshows are native scroll containers (CSS `scroll-snap` where it fits), never a JS-translated track.
+- Autoplay is allowed only on those native scrollers (product card photos, the homepage Netflix row), and only while on screen; it pauses on hover, focus, touch and drag, and is off under `prefers-reduced-motion`. Mouse drag goes through `useDragScroll`; touch uses native scrolling.
 - Never intercept wheel/touch scroll on the page.
 - Hero image is the LCP: `next/image` with `priority`, `sizes="100vw"`, and no entrance animation that delays it.
 - Every image below the fold has explicit `sizes` and a fixed aspect-ratio box (zero CLS). Show skeletons of the final size while Firestore data loads.

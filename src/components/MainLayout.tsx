@@ -4,6 +4,7 @@ import LatestDrop from "./LatestDrop";
 import About from "./About";
 import Features from "./Features";
 import StatementBand from "./StatementBand";
+import ProductRow from "./ProductRow";
 import Reviews from "./Reviews";
 import Footer from "./Footer";
 
@@ -20,6 +21,7 @@ export default function MainLayout() {
         <About />
         <Features />
         <StatementBand />
+        <ProductRow />
         <Reviews />
       </main>
 

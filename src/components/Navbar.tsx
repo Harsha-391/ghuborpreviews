@@ -151,7 +151,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
       >
         <nav
           aria-label="Primary"
-          className="mx-auto grid h-full max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 md:px-10"
+          className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4 px-3 md:px-5"
         >
           {/* Left: links (desktop) / menu toggle (mobile) */}
           <div className="flex items-center gap-8">
@@ -179,7 +179,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
               src="/logo-white.svg"
               alt=""
               fill
-              priority
+              priority={variant === "transparent"}
               sizes="96px"
               className={`object-contain transition-opacity duration-200 ${solid ? "opacity-0" : "opacity-100"}`}
             />
@@ -187,7 +187,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
               src="/logo-black.svg"
               alt=""
               fill
-              priority
+              priority={variant === "solid"}
               sizes="96px"
               className={`object-contain transition-opacity duration-200 ${solid ? "opacity-100" : "opacity-0"}`}
             />
@@ -262,7 +262,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
         inert={!searchOpen}
         className={`fixed inset-0 z-[60] bg-white duration-150 ${overlayState(searchOpen)}`}
       >
-        <div className="mx-auto flex h-[var(--header-h)] max-w-[1600px] items-center justify-end px-4 md:px-10">
+        <div className="flex h-[var(--header-h)] items-center justify-end px-3 md:px-5">
           <button
             type="button"
             onClick={() => setSearchOpen(false)}

@@ -101,6 +101,20 @@ body {
   display: none;
 }
 
+/* Mouse-draggable scrollers (see useDragScroll). Snapping is suspended while a
+   drag is in progress so the content follows the cursor 1:1. */
+@media (pointer: fine) {
+  .drag-scroll {
+    cursor: grab;
+  }
+}
+.drag-scroll[data-dragging="true"] {
+  cursor: grabbing;
+  scroll-snap-type: none !important;
+  scroll-behavior: auto !important;
+  user-select: none;
+}
+
 /* One-shot entrance used by <Reveal>. Content is visible without JS; the
    hidden start state only applies once the observer has armed the element. */
 .reveal[data-armed="true"] {

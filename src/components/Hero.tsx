@@ -24,7 +24,7 @@ export default function Hero() {
       <div aria-hidden className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-black/45 to-transparent" />
       <div aria-hidden className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.5),transparent_50%)]" />
 
-      <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-[1600px] flex-col items-center px-6 pb-14 text-center md:items-start md:px-10 md:pb-20 md:text-left">
+      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-14 text-center md:items-start md:px-5 md:pb-20 md:text-left">
         <p className="mb-5 text-[11px] uppercase tracking-[0.35em] text-white/80">COVENANT DROP I</p>
         <h1 className="max-w-3xl font-serif text-4xl font-light italic leading-[1.05] sm:text-5xl md:text-6xl lg:text-7xl">
           Armor for the modern Gibbor. Wearable scripture.
