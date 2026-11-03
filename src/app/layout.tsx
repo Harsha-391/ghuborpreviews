@@ -4,12 +4,12 @@ import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "../components/AuthContext";
 
-import { ThemeProvider } from "../components/ThemeContext";
 import { ImageConfigProvider } from "../components/ImageConfigContext";
 
 const almarai = Almarai({
   subsets: ["latin"],
   weight: ["300", "400", "700", "800"],
+  variable: "--font-almarai",
   display: "swap",
 });
 
@@ -36,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${instrumentSerif.variable}`}>
+    <html lang="en" className={`${almarai.variable} ${instrumentSerif.variable}`}>
       <head>
         <Script
           id="meta-pixel"
@@ -66,14 +66,12 @@ export default function RootLayout({
           />
         </noscript>
       </head>
-      <body className={almarai.className}>
-        <ThemeProvider>
-          <ImageConfigProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </ImageConfigProvider>
-        </ThemeProvider>
+      <body>
+        <ImageConfigProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ImageConfigProvider>
       </body>
     </html>
   );

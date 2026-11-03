@@ -1,7 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext } from "react";
 
+// The site is light-only. This module keeps the old hook API so existing
+// callers (admin, product page) compile, but there is no state, no effect and
+// no <html> class mutation any more.
 type Theme = "light" | "dark";
 
 interface ThemeContextType {
@@ -10,53 +13,15 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const noop = () => {};
+const LIGHT: ThemeContextType = { theme: "light", toggleTheme: noop, setTheme: noop };
+
+const ThemeContext = createContext<ThemeContextType>(LIGHT);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-
-  useEffect(() => {
-    // White/red/black is the brand default now — only respect an explicit
-    // saved preference, rather than falling back to system dark-mode.
-    const savedTheme = localStorage.getItem("ghubor-theme") as Theme | null;
-    const initialTheme = savedTheme === "dark" ? "dark" : "light";
-    setThemeState(initialTheme);
-    applyTheme(initialTheme);
-  }, []);
-
-  const applyTheme = (t: Theme) => {
-    const root = document.documentElement;
-    if (t === "light") {
-      root.classList.remove("dark");
-      root.classList.add("light");
-    } else {
-      root.classList.remove("light");
-      root.classList.add("dark");
-    }
-  };
-
-  const setTheme = (t: Theme) => {
-    setThemeState(t);
-    localStorage.setItem("ghubor-theme", t);
-    applyTheme(t);
-  };
-
-  const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-  };
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <>{children}</>;
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
-  return context;
+  return useContext(ThemeContext);
 }

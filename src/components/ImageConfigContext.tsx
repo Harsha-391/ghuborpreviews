@@ -1,9 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../utils/firebase";
-import { useTheme } from "./ThemeContext";
 
 export interface ImageSlotConfig {
   label: string;
@@ -62,10 +61,12 @@ export const DEFAULT_IMAGE_CONFIGS: ImageConfigs = {
   },
 };
 
+// First render (server + hydration) always uses DEFAULT_IMAGE_CONFIGS. Cached or
+// Firestore overrides arrive afterwards; components that are already painted
+// should render through <CmsImage>, which crossfades instead of swapping `src`.
 export function ImageConfigProvider({ children }: { children: React.ReactNode }) {
   const [configs, setConfigs] = useState<ImageConfigs>(DEFAULT_IMAGE_CONFIGS);
   const [loading, setLoading] = useState(true);
-  const { theme } = useTheme();
 
   // Load configs on mount
   useEffect(() => {
@@ -122,11 +123,15 @@ export function ImageConfigProvider({ children }: { children: React.ReactNode })
     loadConfigs();
   }, []);
 
-  const getImageUrl = (id: string, fallback?: string): string => {
-    const config = configs[id];
-    if (!config) return fallback || "";
-    return theme === "light" ? config.lightUrl : config.darkUrl;
-  };
+  // Light-only site: always resolve the light variant.
+  const getImageUrl = useCallback(
+    (id: string, fallback?: string): string => {
+      const config = configs[id];
+      if (!config) return fallback || "";
+      return config.lightUrl || fallback || "";
+    },
+    [configs]
+  );
 
   const updateImageConfig = async (id: string, t: "light" | "dark", url: string) => {
     const updated = {
@@ -188,17 +193,14 @@ export function ImageConfigProvider({ children }: { children: React.ReactNode })
     }
   };
 
+  const value = useMemo(
+    () => ({ configs, getImageUrl, updateImageConfig, saveAllConfigs, resetToDefault, loading }),
+    // The mutators close over `configs`, so they only change when it does.
+    [configs, getImageUrl, loading]
+  );
+
   return (
-    <ImageConfigContext.Provider
-      value={{
-        configs,
-        getImageUrl,
-        updateImageConfig,
-        saveAllConfigs,
-        resetToDefault,
-        loading,
-      }}
-    >
+    <ImageConfigContext.Provider value={value}>
       {children}
     </ImageConfigContext.Provider>
   );
