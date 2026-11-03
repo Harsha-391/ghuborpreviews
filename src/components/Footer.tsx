@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Mail, MapPin, Clock, ExternalLink, Shield, Package, RefreshCw, Truck } from "lucide-react";
 import CmsImage from "./CmsImage";
-import { DEFAULT_IMAGE_CONFIGS } from "./ImageConfigContext";
+import { DEFAULT_IMAGE_CONFIGS } from "../utils/imageDefaults";
 
 const InstagramIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

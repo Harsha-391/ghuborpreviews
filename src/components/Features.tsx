@@ -2,7 +2,7 @@ import { Check, ArrowRight } from "lucide-react";
 import CmsImage from "./CmsImage";
 import PillarVideo from "./PillarVideo";
 import Reveal from "./Reveal";
-import { DEFAULT_IMAGE_CONFIGS } from "./ImageConfigContext";
+import { DEFAULT_IMAGE_CONFIGS } from "../utils/imageDefaults";
 
 // Brand pillars. Copy is locked (see docs/redesign/PRD.md §4): restyle only.
 const PILLAR_VIDEO =
