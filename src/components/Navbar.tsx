@@ -17,7 +17,8 @@ interface NavbarProps {
   absolute?: boolean;
 }
 
-const ICON = { size: 18, strokeWidth: 1.5 } as const;
+// Header controls are 1.5x the site-wide 18px icon / 36-40px button scale.
+const ICON = { size: 27, strokeWidth: 1.5 } as const;
 
 // Opening: visibility flips immediately (so focus() works on the first frame)
 // and only opacity fades. Closing: visibility is transitioned too, so the
@@ -72,7 +73,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
       setPastHero(true);
       return;
     }
-    const headerH = window.matchMedia("(min-width: 768px)").matches ? 80 : 64;
+    const headerH = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 96);
     const observer = new IntersectionObserver(
       ([entry]) => setPastHero(!entry.isIntersecting && entry.boundingClientRect.top < headerH),
       { rootMargin: `-${headerH}px 0px 0px 0px` }
@@ -114,14 +115,14 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
   const accountHref = user ? "/profile" : "/login";
   const accountLabel = user ? "Account" : "Sign in";
 
-  const iconBtn = `relative h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full ring-1 ring-inset transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${
+  const iconBtn = `relative h-[54px] w-[54px] md:h-[60px] md:w-[60px] items-center justify-center rounded-full ring-1 ring-inset transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${
     solid
       ? "bg-black/[0.04] ring-black/[0.08] hover:bg-black/[0.08]"
       : "bg-white/10 ring-white/[0.18] hover:bg-white/20"
   }`;
 
   const textLink = (href: string) =>
-    `text-[11px] tracking-[0.25em] uppercase py-2 underline-offset-[10px] decoration-1 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current ${
+    `text-[16.5px] tracking-[0.25em] uppercase py-3 underline-offset-[15px] decoration-1 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current ${
       pathname === href ? "underline" : ""
     }`;
 
@@ -151,10 +152,10 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
       >
         <nav
           aria-label="Primary"
-          className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4 px-3 md:px-5"
+          className="grid h-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 px-2 md:gap-4 md:px-5"
         >
           {/* Left: links (desktop) / menu toggle (mobile) */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-1 md:gap-12">
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
@@ -165,6 +166,9 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
             >
               {menuOpen ? <X {...ICON} /> : <Menu {...ICON} />}
             </button>
+            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className={`${iconBtn} inline-flex md:hidden`}>
+              <Search {...ICON} />
+            </button>
             <Link href="/shop" className={`hidden md:inline ${textLink("/shop")}`}>
               Shop
             </Link>
@@ -174,13 +178,13 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
           </div>
 
           {/* Center: logo. Both variants are stacked so the switch is an opacity change, not a new download. */}
-          <Link href="/" aria-label="Ghubor home" className="relative block h-12 w-[72px] md:h-16 md:w-24">
+          <Link href="/" aria-label="Ghubor home" className="relative block h-[72px] w-[108px] md:h-24 md:w-36">
             <Image
               src="/logo-white.svg"
               alt=""
               fill
               priority={variant === "transparent"}
-              sizes="96px"
+              sizes="144px"
               className={`object-contain transition-opacity duration-200 ${solid ? "opacity-0" : "opacity-100"}`}
             />
             <Image
@@ -188,14 +192,14 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
               alt=""
               fill
               priority={variant === "solid"}
-              sizes="96px"
+              sizes="144px"
               className={`object-contain transition-opacity duration-200 ${solid ? "opacity-100" : "opacity-0"}`}
             />
           </Link>
 
           {/* Right: hanging icon cluster, sitting a few px below the link baseline. */}
-          <div className="flex items-center justify-end gap-1.5 md:translate-y-1 md:gap-2">
-            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className={`${iconBtn} inline-flex`}>
+          <div className="flex items-center justify-end gap-2 md:translate-y-1.5 md:gap-3">
+            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className={`${iconBtn} hidden md:inline-flex`}>
               <Search {...ICON} />
             </button>
             <Link href={accountHref} aria-label={accountLabel} className={`${iconBtn} hidden md:inline-flex`}>
@@ -208,16 +212,16 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
             >
               <Heart {...ICON} />
               {counts.wishlist > 0 && (
-                <span aria-hidden className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
+                <span aria-hidden className="absolute right-3 top-3 h-[9px] w-[9px] rounded-full bg-primary" />
               )}
             </Link>
             <Link
               href="/cart"
               aria-label={`Cart, ${counts.cart} ${counts.cart === 1 ? "item" : "items"}`}
-              className={`${iconBtn} inline-flex !w-auto gap-1.5 px-3 md:px-3.5`}
+              className={`${iconBtn} inline-flex !w-auto gap-2 px-[18px] md:px-[21px]`}
             >
               <ShoppingBag {...ICON} />
-              <span className="min-w-[1ch] text-[11px] leading-none tabular-nums">{counts.cart}</span>
+              <span className="min-w-[1ch] text-[16.5px] leading-none tabular-nums">{counts.cart}</span>
             </Link>
           </div>
         </nav>
@@ -262,12 +266,12 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
         inert={!searchOpen}
         className={`fixed inset-0 z-[60] bg-white duration-150 ${overlayState(searchOpen)}`}
       >
-        <div className="flex h-[var(--header-h)] items-center justify-end px-3 md:px-5">
+        <div className="flex h-[var(--header-h)] items-center justify-end px-2 md:px-5">
           <button
             type="button"
             onClick={() => setSearchOpen(false)}
             aria-label="Close search"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/[0.04] ring-1 ring-inset ring-black/[0.08] hover:bg-black/[0.08] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+            className="inline-flex h-[54px] w-[54px] md:h-[60px] md:w-[60px] items-center justify-center rounded-full bg-black/[0.04] ring-1 ring-inset ring-black/[0.08] hover:bg-black/[0.08] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
           >
             <X {...ICON} />
           </button>

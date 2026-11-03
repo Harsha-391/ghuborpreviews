@@ -12,12 +12,12 @@
   --color-primary: #5C0606; /* Deep red brand accent */
   --color-accent: #000000; /* Black accent for buttons/identity */
   --border-color: rgba(0, 0, 0, 0.08);
-  --header-h: 4rem;
+  --header-h: 6rem; /* 1.5x header */
 }
 
 @media (min-width: 768px) {
   :root {
-    --header-h: 5rem;
+    --header-h: 7.5rem;
   }
 }
 
