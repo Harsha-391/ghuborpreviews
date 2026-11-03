@@ -5,7 +5,7 @@ import "./globals.css";
 import { AuthProvider } from "../components/AuthContext";
 
 import { ImageConfigProvider } from "../components/ImageConfigContext";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../utils/seo";
+import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE, DEFAULT_TITLE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../utils/seo";
 
 const almarai = Almarai({
   subsets: ["latin"],
@@ -21,9 +21,6 @@ const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
   display: "swap",
 });
-
-const DEFAULT_TITLE = "Ghubor | Armor for the Modern Gibbor";
-const SHARE_IMAGE = { url: "/images/hero-light.webp", width: 1024, height: 1024, alt: "Ghubor Covenant Drop I" };
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

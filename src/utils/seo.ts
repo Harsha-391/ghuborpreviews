@@ -153,18 +153,27 @@ export function pageMetadata({
   image?: { url: string; alt: string; width?: number; height?: number };
   noindex?: boolean;
 }): import("next").Metadata {
-  const images = image ? [image] : undefined;
+  // A page's openGraph/twitter objects replace the root layout's rather than
+  // merging with them, so every page states the full set here.
+  const shareImage = image ?? DEFAULT_SHARE_IMAGE;
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
   return {
     ...(title ? { title } : {}),
     description,
     alternates: { canonical: path },
     openGraph: {
+      type: "website",
+      siteName: SITE_NAME,
+      locale: "en_IN",
       url: path,
-      title: title ? `${title} | ${SITE_NAME}` : undefined,
+      title: fullTitle,
       description,
-      ...(images ? { images } : {}),
+      images: [shareImage],
     },
-    twitter: { title: title ? `${title} | ${SITE_NAME}` : undefined, description, ...(images ? { images } : {}) },
+    twitter: { card: "summary_large_image", title: fullTitle, description, images: [shareImage.url] },
     ...(noindex ? { robots: { index: false, follow: true } } : {}),
   };
 }
+
+export const DEFAULT_TITLE = "Ghubor | Armor for the Modern Gibbor";
+export const DEFAULT_SHARE_IMAGE = { url: "/images/hero-light.webp", width: 1024, height: 1024, alt: "Ghubor Covenant Drop I" };
