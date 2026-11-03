@@ -32,22 +32,34 @@ export default function PillarVideo({ src, poster, className = "" }: { src: stri
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return () => near.disconnect();
 
+    // Starting a video spins up the decoder on the main thread (~50ms on a slow
+    // phone). Only do it once the card has stayed half-visible for a moment, and
+    // in idle time, so scrolling past it never stutters.
+    let dwell: ReturnType<typeof setTimeout> | undefined;
+    let idle: number | undefined;
+    const start = () => {
+      const play = () =>
+        video.play().catch(() => {
+          /* autoplay refused: the poster stays */
+        });
+      if ("requestIdleCallback" in window) idle = window.requestIdleCallback(play, { timeout: 1000 });
+      else play();
+    };
     const visible = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          video.play().catch(() => {
-            /* autoplay refused: the poster stays */
-          });
-        } else {
-          video.pause();
-        }
+        clearTimeout(dwell);
+        if (idle !== undefined) window.cancelIdleCallback?.(idle);
+        if (entry.isIntersecting) dwell = setTimeout(start, 400);
+        else video.pause();
       },
-      { threshold: 0.25 }
+      { threshold: 0.5 }
     );
     visible.observe(video);
     return () => {
       near.disconnect();
       visible.disconnect();
+      clearTimeout(dwell);
+      if (idle !== undefined) window.cancelIdleCallback?.(idle);
     };
   }, [poster]);
 
