@@ -19,6 +19,13 @@ interface NavbarProps {
 
 const ICON = { size: 18, strokeWidth: 1.5 } as const;
 
+// Opening: visibility flips immediately (so focus() works on the first frame)
+// and only opacity fades. Closing: visibility is transitioned too, so the
+// element stays visible until the fade-out has finished.
+function overlayState(open: boolean) {
+  return open ? "visible opacity-100 transition-opacity" : "invisible opacity-0 transition-[opacity,visibility]";
+}
+
 function readCounts() {
   try {
     const wishlist = JSON.parse(localStorage.getItem("ghubor-wishlist") || "[]");
@@ -224,9 +231,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
         id="mobile-menu"
         aria-hidden={!menuOpen}
         inert={!menuOpen}
-        className={`fixed inset-0 z-40 flex flex-col bg-white px-6 pb-10 pt-[calc(var(--header-h)+2.5rem)] transition-[opacity,visibility] duration-200 md:hidden ${
-          menuOpen ? "visible opacity-100" : "invisible opacity-0"
-        }`}
+        className={`fixed inset-0 z-40 flex flex-col bg-white px-6 pb-10 pt-[calc(var(--header-h)+2.5rem)] duration-200 md:hidden ${overlayState(menuOpen)}`}
       >
         <ul className="flex flex-col gap-5">
           {mobileLinks.map((link) => (
@@ -255,9 +260,7 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
         aria-label="Search"
         aria-hidden={!searchOpen}
         inert={!searchOpen}
-        className={`fixed inset-0 z-[60] bg-white transition-[opacity,visibility] duration-150 ${
-          searchOpen ? "visible opacity-100" : "invisible opacity-0"
-        }`}
+        className={`fixed inset-0 z-[60] bg-white duration-150 ${overlayState(searchOpen)}`}
       >
         <div className="mx-auto flex h-[var(--header-h)] max-w-[1600px] items-center justify-end px-4 md:px-10">
           <button
