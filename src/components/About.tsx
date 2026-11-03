@@ -9,7 +9,7 @@ export default function About() {
     },
     {
       text: "a mighty warrior, hero, ",
-      className: "text-primary font-serif italic tracking-wide",
+      className: "text-primary font-light",
     },
     {
       text: "Ghubor makes wearable scripture for people fighting battles nobody sees.",
