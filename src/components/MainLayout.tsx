@@ -7,21 +7,22 @@ import StatementBand from "./StatementBand";
 import ProductRow from "./ProductRow";
 import Reviews from "./Reviews";
 import Footer from "./Footer";
+import { Product } from "../data/products";
 
 // Server Component. Interactive pieces (header, product rail, reviews slider,
 // reveal-on-scroll, pillar video, CMS images) are client leaves inside it.
-export default function MainLayout() {
+export default function MainLayout({ products }: { products: Product[] | null }) {
   return (
     <div className="min-h-screen bg-white text-text-page selection:bg-primary selection:text-white">
       <Navbar variant="transparent" />
 
       <main>
         <Hero />
-        <LatestDrop />
+        <LatestDrop initialProducts={products} />
         <About />
         <Features />
         <StatementBand />
-        <ProductRow />
+        <ProductRow initialProducts={products} />
         <Reviews />
       </main>
 

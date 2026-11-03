@@ -11,7 +11,7 @@ export default function Hero() {
       <CmsImage
         slot="hero"
         fallback={heroImage}
-        alt="Ghubor Hero Cinematic"
+        alt="Draped linen garment on a stone figure, Ghubor Covenant Drop I"
         priority
         fetchPriority="high"
         sizes="100vw"

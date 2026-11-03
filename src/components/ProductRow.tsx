@@ -23,8 +23,8 @@ const CARD_SIZES = "(min-width: 1024px) 18vw, (min-width: 768px) 25vw, (min-widt
  * One card is "popped" (scaled up, name and price revealed): the leftmost card
  * while the row glides, or whichever card the mouse, finger or keyboard is on.
  */
-export default function ProductRow() {
-  const products = useStorefrontProducts();
+export default function ProductRow({ initialProducts }: { initialProducts?: Product[] | null }) {
+  const products = useStorefrontProducts(initialProducts);
   const railRef = useRef<HTMLDivElement>(null);
   const engine = useRef<{ pause: () => void; resume: (delay: number) => void } | null>(null);
 

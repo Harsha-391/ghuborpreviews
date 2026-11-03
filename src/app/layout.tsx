@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Almarai, Instrument_Serif } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "../components/AuthContext";
 
 import { ImageConfigProvider } from "../components/ImageConfigContext";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../utils/seo";
 
 const almarai = Almarai({
   subsets: ["latin"],
@@ -21,13 +22,38 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
+const DEFAULT_TITLE = "Ghubor | Armor for the Modern Gibbor";
+const SHARE_IMAGE = { url: "/images/hero-light.webp", width: 1024, height: 1024, alt: "Ghubor Covenant Drop I" };
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.ghubor.com"),
-  title: "Ghubor | Armor for the Modern Gibbor",
-  description: "Armor for the modern Gibbor. Wearable scripture. Fighting battles nobody sees. Forged in the dark, speaking in fragments, bound to become skin.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: DEFAULT_TITLE, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
   icons: {
     icon: "/logo-white.svg",
   },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "en_IN",
+    title: DEFAULT_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [SHARE_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [SHARE_IMAGE.url],
+  },
+  robots: { index: true, follow: true },
+  formatDetection: { telephone: false, email: false, address: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
@@ -38,6 +64,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${almarai.variable} ${instrumentSerif.variable}`}>
       <head>
+        {/* Products and auth talk to Firestore; open the connection early. */}
+        <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
         <Script
           id="meta-pixel"
           strategy="afterInteractive"

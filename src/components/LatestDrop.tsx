@@ -3,6 +3,7 @@
 import Link from "next/link";
 import ProductCard, { ProductCardSkeleton, PRODUCT_GRID, PRODUCT_CARD_SIZES } from "./ProductCard";
 import { useStorefrontProducts } from "../utils/useStorefrontProducts";
+import { Product } from "../data/products";
 
 const SKELETON_COUNT = 4;
 
@@ -11,8 +12,8 @@ const SKELETON_COUNT = 4;
  * phones, 3 on tablets, 4 on desktop. The grid itself never moves; each card
  * runs its own photo slideshow.
  */
-export default function LatestDrop() {
-  const products = useStorefrontProducts();
+export default function LatestDrop({ initialProducts }: { initialProducts?: Product[] | null }) {
+  const products = useStorefrontProducts(initialProducts);
   const loading = products === null;
   const empty = !loading && products.length === 0;
 

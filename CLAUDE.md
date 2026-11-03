@@ -48,6 +48,9 @@ Clean caches when behavior looks stale: delete `.next/`, `node_modules/.cache/`,
 - Respect `prefers-reduced-motion`.
 - `will-change` only while an element is actively animating.
 - Prefer Server Components; keep `"use client"` to the smallest interactive leaf.
+- Firebase loads lazily. Public pages (and anything in the root layout, Navbar, product cards) must not statically import `firebase/*`, `utils/firebase`, `utils/cms` or `utils/analytics`; use `loadFirebase()` from `utils/loadFirebase` or a dynamic `import()`. Checkout/admin may keep static imports.
+- Product listings and product pages are server-rendered from `utils/serverProducts` (Firestore REST, 5-minute cache) so products are in the HTML; client components take them as `initialProducts` and refresh quietly when idle.
+- Images: AVIF then WebP at quality 75 (`next.config.ts`). Only quality 75 is allowed; add a value to `images.qualities` before using another.
 - When replacing a file in `public/images/`, give it a new name — those paths are cached `immutable` for a year.
 
 ## Conventions
@@ -62,6 +65,12 @@ Clean caches when behavior looks stale: delete `.next/`, `node_modules/.cache/`,
 
 - `src/app/api/**`, `src/app/checkout/**`, `src/app/payment/**`, `src/app/admin/**`, `src/utils/firebase.ts`, `src/utils/verifyAdmin.ts`, `firestore.rules`, `storage.rules`, `firebase.json`, `.env*`.
 - The Meta Pixel script in `src/app/layout.tsx`.
+
+## SEO
+
+- Facts used in metadata, JSON-LD and `/llms.txt` live in `src/utils/seo.ts`. Only state what the site itself says; never mark up content that is not visible or not true (no invented ratings or reviews).
+- Every route has a unique title (template `%s | Ghubor`), description and canonical URL. Client pages get theirs from a sibling `layout.tsx`.
+- `sitemap.ts` and `llms.txt/route.ts` are generated from the live catalogue; `public/robots.txt` allows all crawlers (including AI crawlers) and blocks private pages.
 
 ## Git
 
