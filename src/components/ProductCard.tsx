@@ -12,6 +12,10 @@ import { isInWishlist, toggleWishlist } from "../utils/store";
 
 const AUTOPLAY_MS = 3500;
 
+/** Shared product grid: 2 per row on phones, 3 on tablets, 4 on desktop. */
+export const PRODUCT_GRID = "grid grid-cols-2 gap-x-2 gap-y-6 md:grid-cols-3 md:gap-x-3 md:gap-y-8 lg:grid-cols-4";
+export const PRODUCT_CARD_SIZES = "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw";
+
 interface ProductCardProps {
   product: Product;
   sizes: string;
@@ -237,7 +241,10 @@ export default function ProductCard({ product, sizes, autoplayDelay = 0 }: Produ
               {product.title}
             </Link>
           </h3>
-          <p className="text-[12px] leading-5 text-text-muted">{product.price}</p>
+          <p className="truncate text-[12px] leading-5 text-text-muted">
+            {product.mrp && <span className="mr-1.5 text-text-dim line-through">{product.mrp}</span>}
+            {product.price}
+          </p>
         </div>
         <Link
           href={href}

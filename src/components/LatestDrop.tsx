@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import ProductCard, { ProductCardSkeleton } from "./ProductCard";
+import ProductCard, { ProductCardSkeleton, PRODUCT_GRID, PRODUCT_CARD_SIZES } from "./ProductCard";
 import { useStorefrontProducts } from "../utils/useStorefrontProducts";
 
 const SKELETON_COUNT = 4;
-const CARD_SIZES = "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw";
 
 /**
  * "Latest Drop": a static grid of every published product, 2 per row on
@@ -38,11 +37,11 @@ export default function LatestDrop() {
           </Link>
         </div>
       ) : (
-        <div aria-busy={loading} className="grid grid-cols-2 gap-x-2 gap-y-6 px-3 md:grid-cols-3 md:gap-x-3 md:gap-y-8 md:px-5 lg:grid-cols-4">
+        <div aria-busy={loading} className={`${PRODUCT_GRID} px-3 md:px-5`}>
           {loading
             ? Array.from({ length: SKELETON_COUNT }, (_, i) => <ProductCardSkeleton key={i} />)
             : products.map((product, i) => (
-                <ProductCard key={product.id} product={product} sizes={CARD_SIZES} autoplayDelay={(i % 4) * 700} />
+                <ProductCard key={product.id} product={product} sizes={PRODUCT_CARD_SIZES} autoplayDelay={(i % 4) * 700} />
               ))}
         </div>
       )}
