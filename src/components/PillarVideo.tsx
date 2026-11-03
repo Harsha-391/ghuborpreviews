@@ -19,7 +19,7 @@ export default function PillarVideo({ src, poster, className = "" }: { src: stri
 
     // A <video poster> is fetched eagerly even with preload="none", so only set
     // it once the card is close, keeping it off the critical path of the hero.
-    const optimizedPoster = getImageProps({ src: poster, alt: "", width: 828, height: 1035, quality: 70 }).props.src;
+    const optimizedPoster = getImageProps({ src: poster, alt: "", width: 828, height: 1035 }).props.src;
     const near = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting) return;
