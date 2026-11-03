@@ -1,8 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "../utils/firebase";
+import { loadFirebase, whenIdle } from "../utils/loadFirebase";
 import { DEFAULT_IMAGE_CONFIGS, type ImageConfigs } from "../utils/imageDefaults";
 
 export { DEFAULT_IMAGE_CONFIGS } from "../utils/imageDefaults";
@@ -51,12 +50,13 @@ export function ImageConfigProvider({ children }: { children: React.ReactNode })
 
       // 2. Try Firestore if active — deferred off the critical rendering path so this
       // background sync doesn't compete with initial paint / hydration for CPU time.
-      if (db) {
-        const firestoreDb = db;
+      {
         const syncFromFirestore = async () => {
           try {
-            const docRef = doc(firestoreDb, "configs", "theme-images");
-            const docSnap = await getDoc(docRef);
+            const { fs, db } = await loadFirebase();
+            if (!db) return;
+            const docRef = fs.doc(db, "configs", "theme-images");
+            const docSnap = await fs.getDoc(docRef);
             if (docSnap.exists()) {
               const data = docSnap.data() as ImageConfigs;
               const merged = { ...DEFAULT_IMAGE_CONFIGS, ...data };
@@ -70,11 +70,7 @@ export function ImageConfigProvider({ children }: { children: React.ReactNode })
           }
         };
 
-        if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-          (window as any).requestIdleCallback(syncFromFirestore, { timeout: 3000 });
-        } else {
-          setTimeout(syncFromFirestore, 0);
-        }
+        whenIdle(syncFromFirestore, 3000);
       }
     };
 
@@ -108,10 +104,11 @@ export function ImageConfigProvider({ children }: { children: React.ReactNode })
     }
 
     // Save to Firestore
+    const { fs, db } = await loadFirebase();
     if (db) {
       try {
-        const docRef = doc(db, "configs", "theme-images");
-        await setDoc(docRef, updated);
+        const docRef = fs.doc(db, "configs", "theme-images");
+        await fs.setDoc(docRef, updated);
       } catch (err) {
         console.error("Firestore image config save failed:", err);
       }
@@ -127,10 +124,11 @@ export function ImageConfigProvider({ children }: { children: React.ReactNode })
     }
 
     // Save to Firestore
+    const { fs, db } = await loadFirebase();
     if (db) {
       try {
-        const docRef = doc(db, "configs", "theme-images");
-        await setDoc(docRef, newConfigs);
+        const docRef = fs.doc(db, "configs", "theme-images");
+        await fs.setDoc(docRef, newConfigs);
       } catch (err) {
         console.error("Firestore save failed:", err);
       }
@@ -143,12 +141,12 @@ export function ImageConfigProvider({ children }: { children: React.ReactNode })
       localStorage.removeItem("ghubor-image-configs");
     }
     // Async save back to Firestore if available
-    if (db) {
-      const docRef = doc(db, "configs", "theme-images");
-      setDoc(docRef, DEFAULT_IMAGE_CONFIGS).catch((err) =>
-        console.error("Firestore reset failed:", err)
-      );
-    }
+    loadFirebase()
+      .then(({ fs, db }) => {
+        if (!db) return;
+        return fs.setDoc(fs.doc(db, "configs", "theme-images"), DEFAULT_IMAGE_CONFIGS);
+      })
+      .catch((err) => console.error("Firestore reset failed:", err));
   };
 
   const value = useMemo(

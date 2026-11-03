@@ -1,17 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  User as FirebaseUser,
-  signInWithPopup,
-  GoogleAuthProvider,
-} from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { auth, db } from "../utils/firebase";
+import type { User as FirebaseUser } from "firebase/auth";
+import { loadFirebase, whenIdle } from "../utils/loadFirebase";
+
+// Firebase is loaded on demand (see utils/loadFirebase) so it never weighs on
+// the first paint. The session is restored as soon as the browser is idle, and
+// every action below awaits the SDK, so behaviour is unchanged.
 
 export interface UserProfile {
   uid: string;
@@ -53,10 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    const { fs, db } = await loadFirebase();
     if (!db) return;
     try {
-      const docRef = doc(db, "users", uid);
-      const docSnap = await getDoc(docRef);
+      const docRef = fs.doc(db, "users", uid);
+      const docSnap = await fs.getDoc(docRef);
       if (docSnap.exists()) {
         const profileData = docSnap.data() as UserProfile;
         setProfile(profileData);
@@ -74,30 +70,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
-    }
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        await fetchProfile(currentUser.uid);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+    const cancelIdle = whenIdle(() => {
+      loadFirebase().then(({ authSdk, auth }) => {
+        if (cancelled) return;
+        if (!auth) {
+          setLoading(false);
+          return;
+        }
+        unsubscribe = authSdk.onAuthStateChanged(auth, async (currentUser) => {
+          setUser(currentUser);
+          if (currentUser) {
+            await fetchProfile(currentUser.uid);
+          } else {
+            setProfile(null);
+          }
+          setLoading(false);
+        });
+      });
     });
 
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      cancelIdle();
+      unsubscribe?.();
+    };
   }, []);
 
   const signIn = async (email: string, pass: string) => {
+    const { authSdk, auth } = await loadFirebase();
     if (!auth) {
       throw new Error("Sanctuary database keys are not configured yet in .env.local.");
     }
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
+      await authSdk.signInWithEmailAndPassword(auth, email, pass);
     } catch (err) {
       setLoading(false);
       throw err;
@@ -105,17 +113,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    const { authSdk, fs, auth, db } = await loadFirebase();
     if (!auth || !db) {
       throw new Error("Sanctuary database keys are not configured yet in .env.local.");
     }
     setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
+      const provider = new authSdk.GoogleAuthProvider();
+      const userCredential = await authSdk.signInWithPopup(auth, provider);
       const user = userCredential.user;
       
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
+      const docRef = fs.doc(db, "users", user.uid);
+      const docSnap = await fs.getDoc(docRef);
       
       if (!docSnap.exists()) {
         const newProfile: UserProfile = {
@@ -125,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           phone: "", // Keep empty
           createdAt: new Date().toISOString(),
         };
-        await setDoc(docRef, newProfile);
+        await fs.setDoc(docRef, newProfile);
         setProfile(newProfile);
       } else {
         setProfile(docSnap.data() as UserProfile);
@@ -137,12 +146,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, pass: string, name: string, phone: string) => {
+    const { authSdk, fs, auth, db } = await loadFirebase();
     if (!auth || !db) {
       throw new Error("Sanctuary database keys are not configured yet in .env.local.");
     }
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+      const userCredential = await authSdk.createUserWithEmailAndPassword(auth, email, pass);
       const uid = userCredential.user.uid;
       
       // Save profile doc to Firestore
@@ -154,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
 
-      await setDoc(doc(db, "users", uid), newProfile);
+      await fs.setDoc(fs.doc(db, "users", uid), newProfile);
       setProfile(newProfile);
     } catch (err) {
       setLoading(false);
@@ -163,10 +173,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logOut = async () => {
+    const { authSdk, auth } = await loadFirebase();
     if (!auth) return;
     setLoading(true);
     try {
-      await signOut(auth);
+      await authSdk.signOut(auth);
       setUser(null);
       setProfile(null);
       setLoading(false);
@@ -197,11 +208,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(`ghubor-user-profile-${user.uid}`, JSON.stringify(updatedProfile));
     }
 
+    const { fs, db } = await loadFirebase();
     if (!db) return;
     try {
-      const docRef = doc(db, "users", user.uid);
+      const docRef = fs.doc(db, "users", user.uid);
       // setDoc with merge: true is much safer than updateDoc because it creates the doc if missing
-      await setDoc(docRef, data, { merge: true });
+      await fs.setDoc(docRef, data, { merge: true });
     } catch (err) {
       console.warn("Error updating user profile in Firestore (saved locally instead):", err);
       // Suppress the error so the user doesn't get blocked by permission issues

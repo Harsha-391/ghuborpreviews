@@ -4,6 +4,13 @@ import path from "path";
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(process.cwd()),
   images: {
+    // AVIF first (typically 20-30% smaller than WebP at the same visual
+    // quality), WebP for browsers without AVIF. Same quality setting either way.
+    formats: ["image/avif", "image/webp"],
+    qualities: [75],
+    // Product photos change URL when replaced (Firebase adds a new token), so
+    // optimized copies can be cached for a long time.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
         protocol: "https",

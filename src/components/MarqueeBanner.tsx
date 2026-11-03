@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { fetchActiveCoupons, CMSCoupon } from "../utils/cms";
+import type { CMSCoupon } from "../utils/cms";
 
 function couponToMarqueeText(c: CMSCoupon): string {
   const discount = c.type === "percentage" ? `${c.value}% OFF` : `₹${c.value} OFF`;
@@ -13,7 +13,8 @@ export default function MarqueeBanner() {
   const [items, setItems] = useState<string[]>(["NEW DROPS EVERY WEEK"]);
 
   useEffect(() => {
-    fetchActiveCoupons().then((coupons) => {
+    // cms.ts pulls in Firebase; import it on demand so it stays off the first load.
+    import("../utils/cms").then(({ fetchActiveCoupons }) => fetchActiveCoupons()).then((coupons) => {
       if (coupons.length > 0) {
         setItems(coupons.map(couponToMarqueeText));
       }
