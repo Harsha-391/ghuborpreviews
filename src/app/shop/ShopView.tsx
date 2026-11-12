@@ -81,7 +81,7 @@ export function ShopView({ initialProducts, q = "", initialMarqueeItems }: ShopV
         ) : (
           <div className={PRODUCT_GRID}>
             {filteredProducts.map((product, idx) => (
-              <ProductCard key={product.id} product={product} sizes={PRODUCT_CARD_SIZES} autoplayDelay={(idx % 4) * 700} />
+              <ProductCard key={product.id} product={product} sizes={PRODUCT_CARD_SIZES} autoplayDelay={(idx % 4) * 700} priority={idx < 4} />
             ))}
           </div>
         )}

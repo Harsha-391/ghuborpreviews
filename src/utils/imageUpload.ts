@@ -40,6 +40,8 @@ export async function uploadImage(
     throw new Error("Image must be under 10MB.");
   }
 
+  file = await compressForUpload(file);
+
   // Loaded on demand so firebase/storage never ships to public, non-admin pages.
   const { getStorage, ref, uploadBytesResumable, getDownloadURL } = await import("firebase/storage");
   const storage = getStorage(app);
@@ -51,6 +53,8 @@ export async function uploadImage(
   return new Promise((resolve, reject) => {
     const uploadTask = uploadBytesResumable(storageRef, file, {
       contentType: file.type,
+      // Every upload gets a unique path, so the file itself never changes.
+      cacheControl: "public, max-age=31536000, immutable",
     });
 
     uploadTask.on(
@@ -78,6 +82,37 @@ export async function uploadImage(
       }
     );
   });
+}
+
+const MAX_EDGE = 2000; // px, longest side; the storefront never displays larger
+const WEBP_QUALITY = 0.82;
+
+/**
+ * Re-encodes a JPEG/PNG/WebP as WebP at most MAX_EDGE px on its longest side,
+ * in the admin's browser, before it is stored. The storefront resizes every
+ * image on first request, and that takes seconds for a multi-megabyte
+ * original but well under one for a file this size. Returns the original
+ * untouched if it is another format, if the browser cannot encode WebP, or if
+ * the result would not be smaller.
+ */
+async function compressForUpload(file: File): Promise<File> {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", WEBP_QUALITY));
+    if (!blob || blob.type !== "image/webp" || blob.size >= file.size) return file;
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, { type: "image/webp" });
+  } catch {
+    return file;
+  }
 }
 
 /**

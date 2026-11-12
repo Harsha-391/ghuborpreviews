@@ -1,39 +1,46 @@
 import Link from "next/link";
+import { getImageProps, type StaticImageData } from "next/image";
 import { ArrowRight } from "lucide-react";
-import CmsImage from "./CmsImage";
 import heroImage from "../../public/images/hero-light.webp";
 import heroImageMobile from "../../public/images/hero-mobile.webp";
+import { DEFAULT_IMAGE_CONFIGS } from "../utils/imageDefaults";
+import { getImageConfigs } from "../utils/serverImageConfig";
+
+const WIDE = "(min-width: 768px)";
+const NARROW = "(max-width: 767.98px)";
 
 // Server-rendered: the image and copy are in the first paint, nothing is
-// animated in. The static import gives a build-time blur placeholder.
-// Two art-directed crops: a wide group shot for desktop, a tighter portrait
-// crop (same photo, centered on fewer models so prints stay legible) for
-// narrow/phone screens — picked purely by CSS breakpoint, no JS.
-export default function Hero() {
+// animated in. Two art-directed crops in one <picture>: a wide group shot for
+// desktop and a tighter portrait crop for phones. The browser downloads only
+// the one that matches the screen, and each is preloaded only for its own
+// media query. An image the admin has set for a slot (read on the server, see
+// serverImageConfig.ts) replaces the bundled one for that slot.
+export default async function Hero() {
+  const configs = await getImageConfigs();
+  const pick = (slot: string, bundled: StaticImageData) => {
+    const url = configs[slot]?.lightUrl;
+    return url && url !== DEFAULT_IMAGE_CONFIGS[slot]?.lightUrl ? url : bundled;
+  };
+  const common = {
+    alt: "Ghubor graphic tees, backs turned, inside a Jaipur fort courtyard at sunset",
+    fill: true,
+    sizes: "100vw",
+    quality: 75,
+    priority: true,
+    fetchPriority: "high" as const,
+  };
+  const { props: wide } = getImageProps({ ...common, src: pick("hero", heroImage) });
+  const { props: narrow } = getImageProps({ ...common, src: pick("hero-mobile", heroImageMobile) });
+
   return (
     <section className="relative h-screen supports-[height:100svh]:h-svh min-h-[560px] w-full overflow-hidden bg-black text-white">
-      <CmsImage
-        slot="hero"
-        fallback={heroImage}
-        alt="Six models in Ghubor graphic tees, backs turned, inside a Jaipur fort courtyard at sunset"
-        priority
-        fetchPriority="high"
-        sizes="100vw"
-        quality={75}
-        placeholder="blur"
-        className="hidden object-cover object-center md:block"
-      />
-      <CmsImage
-        slot="hero-mobile"
-        fallback={heroImageMobile}
-        alt="Ghubor graphic tees, backs turned, inside a Jaipur fort courtyard at sunset"
-        priority
-        fetchPriority="high"
-        sizes="100vw"
-        quality={75}
-        placeholder="blur"
-        className="block object-cover object-center md:hidden"
-      />
+      <link rel="preload" as="image" imageSrcSet={wide.srcSet} imageSizes="100vw" media={WIDE} fetchPriority="high" />
+      <link rel="preload" as="image" imageSrcSet={narrow.srcSet} imageSizes="100vw" media={NARROW} fetchPriority="high" />
+      <picture>
+        <source media={WIDE} srcSet={wide.srcSet} sizes="100vw" />
+        {/* eslint-disable-next-line @next/next/no-img-element -- getImageProps output; <picture> needs a plain <img> */}
+        <img {...narrow} alt={common.alt} className="object-cover object-center" />
+      </picture>
 
       {/* Legibility scrims: top for the transparent header, bottom for the copy. */}
       <div aria-hidden className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-black/45 to-transparent" />

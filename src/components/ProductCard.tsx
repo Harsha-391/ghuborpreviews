@@ -21,6 +21,8 @@ interface ProductCardProps {
   sizes: string;
   /** Offsets this card's autoplay so neighbouring cards don't flip in unison. */
   autoplayDelay?: number;
+  /** Set for cards visible without scrolling: loads the first photo eagerly and preloads it. */
+  priority?: boolean;
 }
 
 /**
@@ -29,7 +31,7 @@ interface ProductCardProps {
  * own. Autoplay only runs while the card is on screen and nobody is hovering,
  * focusing, touching or dragging it, and never under reduced motion.
  */
-export default function ProductCard({ product, sizes, autoplayDelay = 0 }: ProductCardProps) {
+export default function ProductCard({ product, sizes, autoplayDelay = 0, priority = false }: ProductCardProps) {
   const images = useMemo(() => getCardImages(product), [product]);
   const multi = images.length > 1;
   const href = `/shop/${product.id}`;
@@ -174,6 +176,7 @@ export default function ProductCard({ product, sizes, autoplayDelay = 0 }: Produ
                   fallback={img.url}
                   alt={img.alt}
                   sizes={sizes}
+                  priority={priority}
                   draggable={false}
                   className="object-cover object-center"
                 />
