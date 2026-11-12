@@ -2,22 +2,37 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import CmsImage from "./CmsImage";
 import heroImage from "../../public/images/hero-light.webp";
+import heroImageMobile from "../../public/images/hero-mobile.webp";
 
 // Server-rendered: the image and copy are in the first paint, nothing is
 // animated in. The static import gives a build-time blur placeholder.
+// Two art-directed crops: a wide group shot for desktop, a tighter portrait
+// crop (same photo, centered on fewer models so prints stay legible) for
+// narrow/phone screens — picked purely by CSS breakpoint, no JS.
 export default function Hero() {
   return (
     <section className="relative h-screen supports-[height:100svh]:h-svh min-h-[560px] w-full overflow-hidden bg-black text-white">
       <CmsImage
         slot="hero"
         fallback={heroImage}
-        alt="Draped linen garment on a stone figure, Ghubor Covenant Drop I"
+        alt="Six models in Ghubor graphic tees, backs turned, inside a Jaipur fort courtyard at sunset"
         priority
         fetchPriority="high"
         sizes="100vw"
         quality={75}
         placeholder="blur"
-        className="object-cover object-center"
+        className="hidden object-cover object-center md:block"
+      />
+      <CmsImage
+        slot="hero-mobile"
+        fallback={heroImageMobile}
+        alt="Ghubor graphic tees, backs turned, inside a Jaipur fort courtyard at sunset"
+        priority
+        fetchPriority="high"
+        sizes="100vw"
+        quality={75}
+        placeholder="blur"
+        className="block object-cover object-center md:hidden"
       />
 
       {/* Legibility scrims: top for the transparent header, bottom for the copy. */}

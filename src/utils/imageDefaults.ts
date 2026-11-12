@@ -14,6 +14,11 @@ export const DEFAULT_IMAGE_CONFIGS: ImageConfigs = {
     darkUrl: "/images/hero.webp",
     lightUrl: "/images/hero-light.webp",
   },
+  "hero-mobile": {
+    label: "Hero Background Image (Mobile / Portrait)",
+    darkUrl: "/images/hero-mobile.webp",
+    lightUrl: "/images/hero-mobile.webp",
+  },
   struggle: {
     label: "Struggle Pillar Icon",
     darkUrl: "/images/pillars/struggle.webp",

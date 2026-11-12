@@ -837,7 +837,7 @@ function ImagesTab({ formState, setFormState, handleSave, handleLoadPresets, han
   saveSuccess: boolean; presetLoaded: boolean; resetSuccess: boolean;
 }) {
   const slotToFolder: Record<string, UploadFolder> = {
-    hero: "hero",
+    hero: "hero", "hero-mobile": "hero",
     struggle: "pillars", faith: "pillars", transcendence: "pillars",
     glyph: "details", tag: "details", scripture: "details",
   };
