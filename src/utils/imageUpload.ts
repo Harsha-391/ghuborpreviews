@@ -73,6 +73,7 @@ export async function uploadImage(
       async () => {
         try {
           const url = await getDownloadURL(uploadTask.snapshot.ref);
+          warmImage(url);
           onProgress?.({ percent: 100, state: "success", url });
           resolve(url);
         } catch (err: any) {
@@ -82,6 +83,23 @@ export async function uploadImage(
       }
     );
   });
+}
+
+// Keep in step with images.deviceSizes and images.imageSizes in next.config.ts.
+const SERVED_WIDTHS = [256, 384, 640, 828, 1080, 1440, 1920];
+
+/**
+ * Asks the image optimizer for every size of a freshly uploaded image, in the
+ * background. The first request for a size is resized on the spot and takes
+ * 2-4 seconds; doing that here means it is the admin's browser that waits,
+ * not the first shopper to see the image. Best effort: failures are ignored.
+ */
+function warmImage(url: string) {
+  for (const w of SERVED_WIDTHS) {
+    fetch(`/_next/image?url=${encodeURIComponent(url)}&w=${w}&q=75`, {
+      headers: { Accept: "image/avif,image/webp,*/*" },
+    }).catch(() => {});
+  }
 }
 
 const MAX_EDGE = 2000; // px, longest side; the storefront never displays larger

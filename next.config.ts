@@ -14,8 +14,9 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 828, 1080, 1440, 1920],
     imageSizes: [256, 384],
     // Product photos change URL when replaced (Firebase adds a new token), so
-    // optimized copies can be cached for a long time.
-    minimumCacheTTL: 60 * 60 * 24 * 30,
+    // optimized copies can be cached for a year. A size that falls out of the
+    // cache has to be resized again, and that request takes 2-4 seconds.
+    minimumCacheTTL: 60 * 60 * 24 * 365,
     remotePatterns: [
       {
         protocol: "https",
