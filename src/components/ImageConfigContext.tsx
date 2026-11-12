@@ -18,19 +18,31 @@ interface ImageConfigContextType {
 
 const ImageConfigContext = createContext<ImageConfigContextType | undefined>(undefined);
 
-// First render (server + hydration) always uses DEFAULT_IMAGE_CONFIGS. Cached or
-// Firestore overrides arrive afterwards; components that are already painted
-// should render through <CmsImage>, which crossfades instead of swapping `src`.
-export function ImageConfigProvider({ children }: { children: React.ReactNode }) {
-  const [configs, setConfigs] = useState<ImageConfigs>(DEFAULT_IMAGE_CONFIGS);
-  const [loading, setLoading] = useState(true);
+// First render (server + hydration) now uses the real Firestore-backed
+// configs whenever the server-side fetch in layout.tsx succeeded (see
+// `initialConfigs`) — the admin's actual hero/pillar/detail images are
+// already in the HTML, no flash, no crossfade needed for the common case.
+// DEFAULT_IMAGE_CONFIGS only still matters as a last-resort fallback for a
+// slot Firestore has never had, or if that server-side fetch itself failed.
+export function ImageConfigProvider({
+  children,
+  initialConfigs,
+}: {
+  children: React.ReactNode;
+  initialConfigs?: ImageConfigs;
+}) {
+  const [configs, setConfigs] = useState<ImageConfigs>(
+    initialConfigs ? { ...DEFAULT_IMAGE_CONFIGS, ...initialConfigs } : DEFAULT_IMAGE_CONFIGS
+  );
+  const [loading, setLoading] = useState(!initialConfigs);
 
   // Load configs on mount
   useEffect(() => {
     const loadConfigs = async () => {
-      // 1. Try to load from LocalStorage first (instant render)
+      // 1. Try to load from LocalStorage first (instant render) — only
+      // matters when the server-side fetch didn't already give us data.
       let stored: ImageConfigs | null = null;
-      if (typeof window !== "undefined") {
+      if (!initialConfigs && typeof window !== "undefined") {
         const storedStr = localStorage.getItem("ghubor-image-configs");
         if (storedStr) {
           try {
@@ -44,8 +56,8 @@ export function ImageConfigProvider({ children }: { children: React.ReactNode })
       if (stored) {
         setConfigs({ ...DEFAULT_IMAGE_CONFIGS, ...stored });
       }
-      // Public pages already have a usable image set (defaults + any local cache),
-      // so nothing is blocked on Firestore from here on.
+      // Public pages already have a usable image set (server-fetched Firestore
+      // data, or defaults + any local cache), so nothing is blocked here.
       setLoading(false);
 
       // 2. Try Firestore if active — deferred off the critical rendering path so this

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import JsonLd from "../../components/JsonLd";
 import { ShopView, ShopWithQuery } from "./ShopView";
 import { getStorefrontProducts, priceNumber, toCardProduct } from "../../utils/serverProducts";
+import { getMarqueeItems } from "../../utils/serverCoupons";
 import { absoluteUrl, pageMetadata, titleCase } from "../../utils/seo";
 
 // Static, regenerated at most every 5 minutes: the full grid is in the HTML.
@@ -19,7 +20,7 @@ export async function generateMetadata() {
 }
 
 export default async function ShopPage() {
-  const products = await getStorefrontProducts();
+  const [products, initialMarqueeItems] = await Promise.all([getStorefrontProducts(), getMarqueeItems()]);
   const cards = products ? products.map(toCardProduct) : null;
 
   return (
@@ -40,8 +41,8 @@ export default async function ShopPage() {
         ]}
       />
       {/* The fallback is the full unfiltered grid, so it is what the HTML contains. */}
-      <Suspense fallback={<ShopView initialProducts={cards} />}>
-        <ShopWithQuery initialProducts={cards} />
+      <Suspense fallback={<ShopView initialProducts={cards} initialMarqueeItems={initialMarqueeItems} />}>
+        <ShopWithQuery initialProducts={cards} initialMarqueeItems={initialMarqueeItems} />
       </Suspense>
     </>
   );

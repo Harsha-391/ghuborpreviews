@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import JsonLd from "../../../components/JsonLd";
 import ProductView from "./ProductView";
 import { getStorefrontProduct, getStorefrontProducts } from "../../../utils/serverProducts";
+import { getMarqueeItems } from "../../../utils/serverCoupons";
 import { pageMetadata, productDescription, productImages, productJsonLd, titleCase } from "../../../utils/seo";
 
 type Params = { params: Promise<{ id: string }> };
@@ -38,13 +39,13 @@ export async function generateMetadata({ params }: Params) {
 
 export default async function ProductPage({ params }: Params) {
   const { id } = await params;
-  const product = await getStorefrontProduct(id);
+  const [product, initialMarqueeItems] = await Promise.all([getStorefrontProduct(id), getMarqueeItems()]);
   if (product === "not-found") notFound();
 
   return (
     <>
       {product && <JsonLd data={productJsonLd(product)} />}
-      <ProductView initialProduct={product} />
+      <ProductView initialProduct={product} initialMarqueeItems={initialMarqueeItems} />
     </>
   );
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Product } from "../../data/products";
 import Navbar from "../../components/Navbar";
-import MarqueeBanner from "../../components/MarqueeBanner";
+import MarqueeBannerClient from "../../components/MarqueeBannerClient";
 import Footer from "../../components/Footer";
 import { useStorefrontProducts } from "../../utils/useStorefrontProducts";
 import ProductCard, { ProductCardSkeleton, PRODUCT_GRID, PRODUCT_CARD_SIZES } from "../../components/ProductCard";
@@ -15,6 +15,8 @@ interface ShopViewProps {
   initialProducts: Product[] | null;
   /** The ?q= search, applied in the browser. Empty on the server-rendered version. */
   q?: string;
+  /** MarqueeBanner's promo text, rendered on the server (see page.tsx). */
+  initialMarqueeItems: string[];
 }
 
 /**
@@ -22,7 +24,7 @@ interface ShopViewProps {
  * so the full grid is in the HTML; <ShopWithQuery> then re-renders it in the
  * browser with the ?q= filter applied.
  */
-export function ShopView({ initialProducts, q = "" }: ShopViewProps) {
+export function ShopView({ initialProducts, q = "", initialMarqueeItems }: ShopViewProps) {
   const products = useStorefrontProducts(initialProducts);
   const productsLoading = products === null;
   const displayProducts = products ?? [];
@@ -41,7 +43,7 @@ export function ShopView({ initialProducts, q = "" }: ShopViewProps) {
     <div className="min-h-screen bg-bg-page text-text-page selection:bg-accent selection:text-primary relative overflow-x-hidden pb-24">
       {/* Global Navbar, then the promo line beneath it */}
       <Navbar />
-      <MarqueeBanner />
+      <MarqueeBannerClient initialItems={initialMarqueeItems} />
 
       <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
         {/* Title Section */}
@@ -90,7 +92,13 @@ export function ShopView({ initialProducts, q = "" }: ShopViewProps) {
 }
 
 /** Reads ?q= (browser only) and tracks the view and search. */
-export function ShopWithQuery({ initialProducts }: { initialProducts: Product[] | null }) {
+export function ShopWithQuery({
+  initialProducts,
+  initialMarqueeItems,
+}: {
+  initialProducts: Product[] | null;
+  initialMarqueeItems: string[];
+}) {
   const q = useSearchParams().get("q") || "";
 
   useEffect(() => {
@@ -103,5 +111,5 @@ export function ShopWithQuery({ initialProducts }: { initialProducts: Product[] 
     });
   }, [q]);
 
-  return <ShopView initialProducts={initialProducts} q={q} />;
+  return <ShopView initialProducts={initialProducts} q={q} initialMarqueeItems={initialMarqueeItems} />;
 }

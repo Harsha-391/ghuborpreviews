@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, Shield, CornerDownRight, HelpCircle, Truck, RefreshCw, Heart, ZoomIn, ZoomOut, RotateCcw, X, Tag } from "lucide-react";
 import { Product } from "../../../data/products";
 import Navbar from "../../../components/Navbar";
-import MarqueeBanner from "../../../components/MarqueeBanner";
+import MarqueeBannerClient from "../../../components/MarqueeBannerClient";
 import Footer from "../../../components/Footer";
 import { toggleWishlist, isInWishlist, addToCart } from "../../../utils/store";
 import type { CMSCoupon } from "../../../utils/cms";
@@ -22,7 +22,13 @@ import WaxSeal from "../../../components/WaxSeal";
  * the full product is in the HTML; the client fetch below only runs if the
  * server could not reach Firestore.
  */
-export default function ProductView({ initialProduct }: { initialProduct: Product | null }) {
+export default function ProductView({
+  initialProduct,
+  initialMarqueeItems,
+}: {
+  initialProduct: Product | null;
+  initialMarqueeItems: string[];
+}) {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -268,7 +274,7 @@ export default function ProductView({ initialProduct }: { initialProduct: Produc
     <div className="min-h-screen bg-bg-page text-text-page selection:bg-accent selection:text-primary relative overflow-x-hidden pb-24">
       {/* Global Navbar, then the promo line beneath it */}
       <Navbar />
-      <MarqueeBanner />
+      <MarqueeBannerClient initialItems={initialMarqueeItems} />
 
       {/* Main product showcase structure (Amazon style) */}
       <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">

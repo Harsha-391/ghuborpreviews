@@ -6,6 +6,7 @@ import { AuthProvider } from "../components/AuthContext";
 
 import { ImageConfigProvider } from "../components/ImageConfigContext";
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE, DEFAULT_TITLE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../utils/seo";
+import { getImageConfigs } from "../utils/serverImageConfig";
 
 const almarai = Almarai({
   subsets: ["latin"],
@@ -53,11 +54,13 @@ export const viewport: Viewport = {
   colorScheme: "light",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const initialImageConfigs = await getImageConfigs();
+
   return (
     <html lang="en" className={`${almarai.variable} ${instrumentSerif.variable}`}>
       <head>
@@ -93,7 +96,7 @@ export default function RootLayout({
         </noscript>
       </head>
       <body>
-        <ImageConfigProvider>
+        <ImageConfigProvider initialConfigs={initialImageConfigs}>
           <AuthProvider>
             {children}
           </AuthProvider>
