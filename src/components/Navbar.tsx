@@ -115,11 +115,8 @@ export default function Navbar({ variant = "solid" }: NavbarProps) {
   const accountHref = user ? "/profile" : "/login";
   const accountLabel = user ? "Account" : "Sign in";
 
-  const iconBtn = `relative h-[54px] w-[54px] md:h-[60px] md:w-[60px] items-center justify-center rounded-full ring-1 ring-inset transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${
-    solid
-      ? "bg-black/[0.04] ring-black/[0.08] hover:bg-black/[0.08]"
-      : "bg-white/10 ring-white/[0.18] hover:bg-white/20"
-  }`;
+  const iconBtn =
+    "relative h-[54px] w-[54px] md:h-[60px] md:w-[60px] items-center justify-center transition-opacity duration-200 cursor-pointer hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current";
 
   const textLink = (href: string) =>
     `text-[16.5px] tracking-[0.25em] uppercase py-3 underline-offset-[15px] decoration-1 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current ${
